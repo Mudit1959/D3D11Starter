@@ -7,6 +7,10 @@
 
 #include <DirectXMath.h>
 
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
+
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
@@ -25,6 +29,7 @@ Game::Game()
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateGeometry();
+	Initialize(); //Initialize ImGui
 
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -58,9 +63,99 @@ Game::Game()
 // --------------------------------------------------------
 Game::~Game()
 {
-
+	// ImGui clean up
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }
 
+void Game::Initialize() 
+{
+	// Initialize ImGui itself & platform/renderer backends
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui_ImplWin32_Init(Window::Handle());
+	ImGui_ImplDX11_Init(Graphics::Device.Get(), Graphics::Context.Get());
+	// Pick a style (uncomment one of these 3)
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsLight();
+	//ImGui::StyleColorsClassic();
+	Game::showDemo = false;
+}
+
+/// <summary
+/// Updates ImGui and within it, refreshes the information displayed. 
+/// </summary>
+/// <param name="deltaTime"></param>
+void Game::UpdateImGui(float deltaTime) 
+{
+	// Feed fresh data to ImGui
+	ImGuiIO& io = ImGui::GetIO();
+	io.DeltaTime = deltaTime;
+	io.DisplaySize.x = (float)Window::Width();
+	io.DisplaySize.y = (float)Window::Height();
+	// Reset the frame
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+	// Determine new input capture
+	Input::SetKeyboardCapture(io.WantCaptureKeyboard);
+	Input::SetMouseCapture(io.WantCaptureMouse);
+	Game::RefreshUI();
+}
+	
+
+void Game::RefreshUI() 
+{
+	
+	//Create the window
+	ImGui::Begin("Hello there!");
+
+	// Feature 1 - Tree Node
+	if (ImGui::TreeNode("Details")) {
+		ImGui::Text("Frame Rate: %f fps", ImGui::GetIO().Framerate);
+
+		ImGui::Text("Window Client Size: %ix%i", Window::Width(), Window::Height());
+
+		ImGui::ColorEdit4("RGBA color editor", color);
+
+		// Feature 2 - Drag and change
+		const float drag_speed = 0.4f;
+		static bool drag_clamp = false;
+		static char v = 0; static char zero = 0; static char fifty = 50;
+		ImGui::DragScalar("Drag to change!", ImGuiDataType_S8, &v, drag_speed, drag_clamp ? &zero : NULL, drag_clamp ? &fifty : NULL);
+
+		// Feature 3 - Progress Bar
+		static float progress = 0.0f, progress_dir = 1.0f;
+		progress += progress_dir * 0.4f * ImGui::GetIO().DeltaTime;
+		if (progress >= 1.1f) { progress = 1.1f; progress_dir = -1.0f; }
+		if (progress <= -0.1f) { progress = -0.1f; progress_dir = 1.0f; }
+		ImGui::ProgressBar(progress, ImVec2(0.0f, 0.0f));
+		ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+		ImGui::Text("Sisyphus");
+
+		ImGui::TreePop(); // Important for tree node! Collapsing Header does not require this!!!
+	}
+	
+
+	const char* visibility = "Hide ImGui Demo Window";
+
+	if (!Game::showDemo)
+	{
+		visibility = "Show ImGui Demo Window";
+	}
+
+	if (ImGui::Button(visibility))
+	{
+		Game::showDemo = !Game::showDemo;
+	}
+
+	if (Game::showDemo) { ImGui::ShowDemoWindow(); }
+
+	//Destroy the window
+	ImGui::End();
+	
+}
 
 // --------------------------------------------------------
 // Loads shaders from compiled shader object (.cso) files
@@ -241,6 +336,7 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	Game::UpdateImGui(deltaTime);
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();
@@ -257,8 +353,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - At the beginning of Game::Draw() before drawing *anything*
 	{
 		// Clear the back buffer (erase what's on screen) and depth buffer
-		const float color[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
-		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	color);
+		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	Game::color);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
@@ -294,6 +389,8 @@ void Game::Draw(float deltaTime, float totalTime)
 	{
 		// Present at the end of the frame
 		bool vsync = Graphics::VsyncState();
+		ImGui::Render(); // Turns this frame’s UI into renderable triangles
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Draws it to the screen
 		Graphics::SwapChain->Present(
 			vsync ? 1 : 0,
 			vsync ? 0 : DXGI_PRESENT_ALLOW_TEARING);

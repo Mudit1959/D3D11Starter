@@ -15,6 +15,7 @@ public:
 	// Primary functions
 	void Update(float deltaTime, float totalTime);
 	void Draw(float deltaTime, float totalTime);
+	void Initialize();
 	void OnResize();
 
 private:
@@ -22,6 +23,12 @@ private:
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void LoadShaders();
 	void CreateGeometry();
+	void UpdateImGui(float deltaTime);
+	void RefreshUI();
+
+	bool showDemo;
+	float color[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
+	
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
