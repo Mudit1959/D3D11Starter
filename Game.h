@@ -2,6 +2,8 @@
 
 #include <d3d11.h>
 #include <wrl/client.h>
+#include <memory>
+#include "Mesh.h"
 
 class Game
 {
@@ -26,6 +28,8 @@ private:
 	void UpdateImGui(float deltaTime);
 	void RefreshUI();
 
+	std::shared_ptr<Mesh> triangleMesh, rectMesh, octMesh;
+
 	bool showDemo;
 	float color[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
 	
@@ -36,8 +40,8 @@ private:
 	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
 
 	// Buffers to hold actual geometry data
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
+	//Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
+	//Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 
 	// Shaders and shader-related constructs
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
