@@ -5,6 +5,7 @@
 #include "PathHelpers.h"
 #include "Window.h"
 #include "Mesh.h"
+#include "BufferStructs.h"
 
 #include <DirectXMath.h>
 
@@ -18,6 +19,9 @@
 
 // For the DirectX Math library
 using namespace DirectX;
+
+float guiTint[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+float guiXOffset, guiYOffset, guiZOffset;
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -166,6 +170,18 @@ void Game::RefreshUI()
 		}
 
 		ImGui::TreePop();
+
+		
+	}
+
+	if (ImGui::TreeNode("Tint & Offset"))
+	{
+		float max = 1.0f; float min = -1.0f;
+		ImGui::ColorEdit4("Tint RGBA editor", guiTint);
+		ImGui::SliderScalar("X Offset", ImGuiDataType_Float, &guiXOffset, &min, &max, "%f");
+		ImGui::SliderScalar("Y Offset", ImGuiDataType_Float, &guiYOffset, &min, &max, "%f");
+		ImGui::SliderScalar("Z Offset", ImGuiDataType_Float, &guiZOffset, &min, &max, "%f");
+		ImGui::TreePop();
 	}
 	
 
@@ -228,6 +244,23 @@ void Game::LoadShaders()
 			vertexShaderBlob->GetBufferSize(),		// How big is that data?
 			0,										// No classes in this shader
 			vertexShader.GetAddressOf());			// The address of the ID3D11VertexShader pointer
+
+		// Create the buffer to feed external data to the GPU
+
+		// 1. Define the buffer description
+		unsigned int eDataSize = ((sizeof(ExtraVertexData) + 15) / 16) * 16;
+		D3D11_BUFFER_DESC eb = {};
+		eb.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		eb.ByteWidth = eDataSize;
+		eb.Usage = D3D11_USAGE_DYNAMIC;
+		eb.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+		eb.MiscFlags = 0;
+		eb.StructureByteStride = 0;
+
+		//2. Create the buffer
+		Graphics::Device->CreateBuffer(&eb, 0, vsConstBuffer.GetAddressOf());
+
+
 	}
 
 	// Create an input layout 
@@ -369,14 +402,42 @@ void Game::Draw(float deltaTime, float totalTime)
 		// Clear the back buffer (erase what's on screen) and depth buffer
 		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	Game::color);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+		// Bind the constant buffer
+		Graphics::Context->VSSetConstantBuffers(0, 1, vsConstBuffer.GetAddressOf());
 	}
 
 	// DRAW geometry
 	// - These steps are generally repeated for EACH object you draw
 	// - Other Direct3D calls will also be necessary to do more complex things
 	{
+		ExtraVertexData vsData;
+		vsData.colourTint = XMFLOAT4(guiTint);
+		vsData.offset = XMFLOAT3(guiXOffset, guiYOffset, guiZOffset);
+		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+
+		Graphics::Context->Map(vsConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+
+		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+
+		Graphics::Context->Unmap(vsConstBuffer.Get(), 0);
+
 		triangleMesh->Draw();
+
+
+		Graphics::Context->Map(vsConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+
+		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+
+		Graphics::Context->Unmap(vsConstBuffer.Get(), 0);
 		rectMesh->Draw();
+
+
+		Graphics::Context->Map(vsConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+
+		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+
+		Graphics::Context->Unmap(vsConstBuffer.Get(), 0);
 		octMesh->Draw();
 	}
 
