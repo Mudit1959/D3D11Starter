@@ -361,9 +361,9 @@ void Game::CreateGeometry()
 		0, 6, 7,
 	};
 
-	triangleMesh = std::make_shared<Mesh>(&triangleMeshVertices[0], 3, &triangleMeshIndices[0], 3);
-	rectMesh = std::make_shared<Mesh>(&rectMeshVertices[0], 4, &rectMeshIndices[0], 6);
-	octMesh = std::make_shared<Mesh>(&octMeshVertices[0], 8, &octMeshIndices[0], 18);
+	triangleMesh = std::make_shared<Mesh>(&triangleMeshVertices[0], ARRAYSIZE(triangleMeshVertices), &triangleMeshIndices[0], ARRAYSIZE(triangleMeshIndices));
+	rectMesh = std::make_shared<Mesh>(&rectMeshVertices[0], ARRAYSIZE(rectMeshVertices), &rectMeshIndices[0], ARRAYSIZE(rectMeshIndices));
+	octMesh = std::make_shared<Mesh>(&octMeshVertices[0], ARRAYSIZE(octMeshVertices), &octMeshIndices[0], ARRAYSIZE(octMeshIndices));
 	
 }
 
