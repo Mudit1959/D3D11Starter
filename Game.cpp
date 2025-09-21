@@ -368,7 +368,9 @@ void Game::CreateGeometry()
 
 	// Now to create entities using the meshes
 	entityList.push_back(Entity(triangleMesh));
-	
+
+	entityList.push_back(Entity(triangleMesh));
+	entityList[1].GetTransform()->MoveAbsolute(1.0f, 0.3f, 0.0f);
 }
 
 
