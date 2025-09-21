@@ -4,6 +4,8 @@
 #include <wrl/client.h>
 #include <memory>
 #include "Mesh.h"
+#include "Transform.h"
+#include "Entity.h"
 
 class Game
 {
@@ -19,6 +21,7 @@ public:
 	void Draw(float deltaTime, float totalTime);
 	void Initialize();
 	void OnResize();
+	void SetExternalData(float tint[4], Entity e);
 
 private:
 

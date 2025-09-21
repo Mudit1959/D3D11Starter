@@ -7,6 +7,7 @@
 #include "Mesh.h"
 #include "BufferStructs.h"
 
+
 #include <DirectXMath.h>
 
 #include "ImGui/imgui.h"
@@ -16,12 +17,13 @@
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
+#include <vector>
 
 // For the DirectX Math library
 using namespace DirectX;
 
 float guiTint[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-float guiXOffset, guiYOffset, guiZOffset;
+std::vector<Entity> entityList;
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -178,9 +180,6 @@ void Game::RefreshUI()
 	{
 		float max = 1.0f; float min = -1.0f;
 		ImGui::ColorEdit4("Tint RGBA editor", guiTint);
-		ImGui::SliderScalar("X Offset", ImGuiDataType_Float, &guiXOffset, &min, &max, "%f");
-		ImGui::SliderScalar("Y Offset", ImGuiDataType_Float, &guiYOffset, &min, &max, "%f");
-		ImGui::SliderScalar("Z Offset", ImGuiDataType_Float, &guiZOffset, &min, &max, "%f");
 		ImGui::TreePop();
 	}
 	
@@ -247,7 +246,7 @@ void Game::LoadShaders()
 
 		// Create the buffer to feed external data to the GPU
 
-		// 1. Define the buffer description
+		// 1. Define the constant buffer description - eData(external Data), eb(external data buffer)
 		unsigned int eDataSize = ((sizeof(ExtraVertexData) + 15) / 16) * 16;
 		D3D11_BUFFER_DESC eb = {};
 		eb.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -257,7 +256,7 @@ void Game::LoadShaders()
 		eb.MiscFlags = 0;
 		eb.StructureByteStride = 0;
 
-		//2. Create the buffer
+		//2. Create the constant buffer
 		Graphics::Device->CreateBuffer(&eb, 0, vsConstBuffer.GetAddressOf());
 
 
@@ -303,6 +302,7 @@ void Game::CreateGeometry()
 	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
 	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 	XMFLOAT4 black = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in CPU memory
@@ -342,12 +342,12 @@ void Game::CreateGeometry()
 	Vertex octMeshVertices[] =
 	{
 		{XMFLOAT3(+0.7f-0.05f, -0.7f, +0.0f), black},
-		{XMFLOAT3(+0.6f-0.05f, -0.5f, +0.0f), black},
+		{XMFLOAT3(+0.6f-0.05f, -0.5f, +0.0f), white},
 		{XMFLOAT3(+0.6f-0.05f, -0.3f, +0.0f), black},
-		{XMFLOAT3(+0.7f-0.05f, -0.1f, +0.0f), black},
+		{XMFLOAT3(+0.7f-0.05f, -0.1f, +0.0f), white},
 		{XMFLOAT3(+0.9f-0.05f, -0.1f, +0.0f), black},
 		{XMFLOAT3(+1.0f-0.05f, -0.3f, +0.0f), black},
-		{XMFLOAT3(+1.0f-0.05f, -0.5f, +0.0f), black},
+		{XMFLOAT3(+1.0f-0.05f, -0.5f, +0.0f), white},
 		{XMFLOAT3(+0.9f-0.05f, -0.7f, +0.0f), black}
 	};
 
@@ -361,9 +361,13 @@ void Game::CreateGeometry()
 		0, 6, 7,
 	};
 
+	// Meshes created
 	triangleMesh = std::make_shared<Mesh>(&triangleMeshVertices[0], ARRAYSIZE(triangleMeshVertices), &triangleMeshIndices[0], ARRAYSIZE(triangleMeshIndices));
 	rectMesh = std::make_shared<Mesh>(&rectMeshVertices[0], ARRAYSIZE(rectMeshVertices), &rectMeshIndices[0], ARRAYSIZE(rectMeshIndices));
 	octMesh = std::make_shared<Mesh>(&octMeshVertices[0], ARRAYSIZE(octMeshVertices), &octMeshIndices[0], ARRAYSIZE(octMeshIndices));
+
+	// Now to create entities using the meshes
+	entityList.push_back(Entity(triangleMesh));
 	
 }
 
@@ -411,34 +415,11 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - These steps are generally repeated for EACH object you draw
 	// - Other Direct3D calls will also be necessary to do more complex things
 	{
-		ExtraVertexData vsData;
-		vsData.colourTint = XMFLOAT4(guiTint);
-		vsData.offset = XMFLOAT3(guiXOffset, guiYOffset, guiZOffset);
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-
-		Graphics::Context->Map(vsConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-
-		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-
-		Graphics::Context->Unmap(vsConstBuffer.Get(), 0);
-
-		triangleMesh->Draw();
-
-
-		Graphics::Context->Map(vsConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-
-		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-
-		Graphics::Context->Unmap(vsConstBuffer.Get(), 0);
-		rectMesh->Draw();
-
-
-		Graphics::Context->Map(vsConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-
-		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-
-		Graphics::Context->Unmap(vsConstBuffer.Get(), 0);
-		octMesh->Draw();
+		for (int i = 0; i < entityList.size(); i++) 
+		{
+			SetExternalData(guiTint, entityList[i]);
+			entityList[i].Draw();
+		}
 	}
 
 	// Frame END
@@ -461,5 +442,18 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 }
 
+void Game::SetExternalData(float tint[4] , Entity e)
+{
+	ExtraVertexData vsData;
+	vsData.colourTint = XMFLOAT4(tint);
+	vsData.world = e.GetTransform()->GetWorldMatrix();
+	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+
+	Graphics::Context->Map(vsConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+
+	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+
+	Graphics::Context->Unmap(vsConstBuffer.Get(), 0);
+}
 
 
