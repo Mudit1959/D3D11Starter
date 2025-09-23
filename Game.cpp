@@ -23,6 +23,12 @@
 using namespace DirectX;
 
 float guiTint[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+float entity_1_prs[3][9] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 
+							0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 
+							0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+
+
+
 std::vector<Entity> entityList;
 
 // --------------------------------------------------------
@@ -174,6 +180,35 @@ void Game::RefreshUI()
 		ImGui::TreePop();
 
 		
+	}
+
+	if (ImGui::TreeNode("Entitities")) 
+	{
+		if (ImGui::TreeNode("Entity 1")) 
+		{
+			ImGui::DragFloat3("Position", &entity_1_prs[0][0], 0.01f, -1.0f, 1.0f);
+			ImGui::DragFloat3("Rotation", &entity_1_prs[0][3], 0.01f, 0, 2*3.14);
+			ImGui::DragFloat3("Scale", &entity_1_prs[0][6], 0.01f, 0.01f, 10.0f);
+			ImGui::Text("Indices: %i", entityList[2].GetMeshIndexCount());
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Entity 2"))
+		{
+			ImGui::DragFloat3("Position", &entity_1_prs[1][0], 0.01f, -1.0f, 1.0f);
+			ImGui::DragFloat3("Rotation", &entity_1_prs[1][3], 0.01f, 0, 2 * 3.14);
+			ImGui::DragFloat3("Scale", &entity_1_prs[1][6], 0.01f, 0.01f, 10.0f);
+			ImGui::Text("Indices: %i", entityList[3].GetMeshIndexCount());
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Entity 3"))
+		{
+			ImGui::DragFloat3("Position", &entity_1_prs[2][0], 0.01f, -1.0f, 1.0f);
+			ImGui::DragFloat3("Rotation", &entity_1_prs[2][3], 0.01f, 0, 2 * 3.14);
+			ImGui::DragFloat3("Scale", &entity_1_prs[2][6], 0.01f, 0.01f, 10.0f);
+			ImGui::Text("Indices: %i", entityList[4].GetMeshIndexCount());
+			ImGui::TreePop();
+		}
+		ImGui::TreePop();
 	}
 
 	if (ImGui::TreeNode("Tint & Offset"))
@@ -367,10 +402,17 @@ void Game::CreateGeometry()
 	octMesh = std::make_shared<Mesh>(&octMeshVertices[0], ARRAYSIZE(octMeshVertices), &octMeshIndices[0], ARRAYSIZE(octMeshIndices));
 
 	// Now to create entities using the meshes
+	// Entity 1
 	entityList.push_back(Entity(triangleMesh));
 
+	//Entity 2 - hardcoded position
 	entityList.push_back(Entity(triangleMesh));
 	entityList[1].GetTransform()->MoveAbsolute(1.0f, 0.3f, 0.0f);
+
+	//Entity 3, 4, 5
+	entityList.push_back(Entity(triangleMesh));
+	entityList.push_back(Entity(octMesh));
+	entityList.push_back(Entity(octMesh));
 }
 
 
@@ -419,6 +461,16 @@ void Game::Draw(float deltaTime, float totalTime)
 	{
 		for (int i = 0; i < entityList.size(); i++) 
 		{
+			if (i >= 2) 
+			{
+				entityList[i].GetTransform()->SetPosition(entity_1_prs[i-2][0], entity_1_prs[i-2][1], entity_1_prs[i-2][2]);
+				entityList[i].GetTransform()->SetRotation(entity_1_prs[i-2][3], entity_1_prs[i - 2][4], entity_1_prs[i - 2][5]);
+				entityList[i].GetTransform()->SetScale(entity_1_prs[i - 2][6], entity_1_prs[i - 2][7], entity_1_prs[i - 2][8]);
+			}
+			if (i == 0) 
+			{
+				entityList[i].GetTransform()->Rotate(0.0f, deltaTime, 0.0f);
+			}
 			SetExternalData(guiTint, entityList[i]);
 			entityList[i].Draw();
 		}

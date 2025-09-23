@@ -13,3 +13,8 @@ void Entity::Draw()
 {
 	mesh->Draw();
 }
+
+int Entity::GetMeshIndexCount() 
+{
+	return mesh->GetIndexCount();
+}
