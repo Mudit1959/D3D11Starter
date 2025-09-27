@@ -6,6 +6,8 @@
 #include "Mesh.h"
 #include "Transform.h"
 #include "Entity.h"
+#include "Camera.h"
+
 
 class Game
 {
@@ -21,7 +23,7 @@ public:
 	void Draw(float deltaTime, float totalTime);
 	void Initialize();
 	void OnResize();
-	void SetExternalData(float tint[4], Entity e);
+	void SetExternalData(float tint[4], DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e);
 
 private:
 
@@ -31,6 +33,7 @@ private:
 	void UpdateImGui(float deltaTime);
 	void RefreshUI();
 
+	std::shared_ptr<Camera> camera;
 	std::shared_ptr<Mesh> triangleMesh, rectMesh, octMesh;
 
 	bool showDemo;

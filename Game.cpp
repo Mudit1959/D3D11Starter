@@ -6,7 +6,7 @@
 #include "Window.h"
 #include "Mesh.h"
 #include "BufferStructs.h"
-
+#include "Camera.h"
 
 #include <DirectXMath.h>
 
@@ -43,7 +43,7 @@ Game::Game()
 	LoadShaders();
 	CreateGeometry();
 	Initialize(); //Initialize ImGui
-
+	camera = std::make_shared<Camera>(0.0f, 0.0f, -10.0f, Window::AspectRatio());
 	// Set initial graphics API state
 	//  - These settings persist until we change them
 	//  - Some of these, like the primitive topology & input layout, probably won't change
@@ -422,7 +422,10 @@ void Game::CreateGeometry()
 // --------------------------------------------------------
 void Game::OnResize()
 {
-	
+	if (camera != NULL) 
+	{
+		camera->UpdateProjMatrix(Window::AspectRatio());
+	}
 }
 
 
@@ -432,6 +435,7 @@ void Game::OnResize()
 void Game::Update(float deltaTime, float totalTime)
 {
 	Game::UpdateImGui(deltaTime);
+	camera->Update(deltaTime);
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();
@@ -471,7 +475,7 @@ void Game::Draw(float deltaTime, float totalTime)
 			{
 				entityList[i].GetTransform()->Rotate(0.0f, deltaTime, 0.0f);
 			}
-			SetExternalData(guiTint, entityList[i]);
+			SetExternalData(guiTint, camera->GetView(), camera->GetProj(), entityList[i]);
 			entityList[i].Draw();
 		}
 	}
@@ -496,11 +500,13 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 }
 
-void Game::SetExternalData(float tint[4] , Entity e)
+void Game::SetExternalData(float tint[4] , DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e)
 {
 	ExtraVertexData vsData;
 	vsData.colourTint = XMFLOAT4(tint);
 	vsData.world = e.GetTransform()->GetWorldMatrix();
+	vsData.view = view;
+	vsData.proj = proj;
 	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
 
 	Graphics::Context->Map(vsConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
