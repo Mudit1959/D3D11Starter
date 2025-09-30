@@ -33,7 +33,7 @@ private:
 	void UpdateImGui(float deltaTime);
 	void RefreshUI();
 
-	std::shared_ptr<Camera> camera;
+	std::shared_ptr<Camera> camera, secondCamera;
 	std::shared_ptr<Mesh> triangleMesh, rectMesh, octMesh;
 
 	bool showDemo;

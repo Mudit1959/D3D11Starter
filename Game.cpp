@@ -27,9 +27,8 @@ float entity_1_prs[3][9] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f
 							0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 
 							0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
 
-
-
 std::vector<Entity> entityList;
+int cameraChoice = 0;
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -44,6 +43,7 @@ Game::Game()
 	CreateGeometry();
 	Initialize(); //Initialize ImGui
 	camera = std::make_shared<Camera>(0.0f, 0.0f, -10.0f, Window::AspectRatio());
+	secondCamera = std::make_shared<Camera>(0.0f, 0.0f, -10.0f, Window::AspectRatio());
 	// Set initial graphics API state
 	//  - These settings persist until we change them
 	//  - Some of these, like the primitive topology & input layout, probably won't change
@@ -215,6 +215,27 @@ void Game::RefreshUI()
 	{
 		float max = 1.0f; float min = -1.0f;
 		ImGui::ColorEdit4("Tint RGBA editor", guiTint);
+		ImGui::TreePop();
+	}
+
+	if (ImGui::TreeNode("Cameras"))
+	{
+		if (ImGui::Button("Camera 1"))
+			cameraChoice = 0;
+		if (cameraChoice==0)
+		{
+			ImGui::SameLine();
+			ImGui::Text("Active");
+		}
+
+		if (ImGui::Button("Camera 2"))
+			cameraChoice = 1;
+		if (cameraChoice==1)
+		{
+			ImGui::SameLine();
+			ImGui::Text("Active");
+		}
+
 		ImGui::TreePop();
 	}
 	
@@ -404,6 +425,7 @@ void Game::CreateGeometry()
 	// Now to create entities using the meshes
 	// Entity 1
 	entityList.push_back(Entity(triangleMesh));
+	entityList[0].GetTransform()->MoveAbsolute(0.0f, 0.0f, 10.0f);
 
 	//Entity 2 - hardcoded position
 	entityList.push_back(Entity(triangleMesh));
@@ -411,7 +433,9 @@ void Game::CreateGeometry()
 
 	//Entity 3, 4, 5
 	entityList.push_back(Entity(triangleMesh));
+	entityList[2].GetTransform()->MoveAbsolute(0.0f, 0.0f, 30.0f);
 	entityList.push_back(Entity(octMesh));
+	entityList[3].GetTransform()->MoveAbsolute(10.0f, 0.0f, 20.0f);
 	entityList.push_back(Entity(octMesh));
 }
 
@@ -425,6 +449,7 @@ void Game::OnResize()
 	if (camera != NULL) 
 	{
 		camera->UpdateProjMatrix(Window::AspectRatio());
+		secondCamera->UpdateProjMatrix(Window::AspectRatio());
 	}
 }
 
@@ -435,7 +460,9 @@ void Game::OnResize()
 void Game::Update(float deltaTime, float totalTime)
 {
 	Game::UpdateImGui(deltaTime);
-	camera->Update(deltaTime);
+	if (cameraChoice == 0) { camera->Update(deltaTime); }
+	else { secondCamera->Update(deltaTime); }
+
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();
@@ -463,19 +490,14 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - These steps are generally repeated for EACH object you draw
 	// - Other Direct3D calls will also be necessary to do more complex things
 	{
+
+		entityList[0].GetTransform()->Rotate(0.0f, deltaTime, 0.0f);
+		float offset = sin(totalTime)/2;
+		entityList[3].GetTransform()->MoveAbsolute(0.0f, 0.0f, offset/100);
 		for (int i = 0; i < entityList.size(); i++) 
 		{
-			if (i >= 2) 
-			{
-				entityList[i].GetTransform()->SetPosition(entity_1_prs[i-2][0], entity_1_prs[i-2][1], entity_1_prs[i-2][2]);
-				entityList[i].GetTransform()->SetRotation(entity_1_prs[i-2][3], entity_1_prs[i - 2][4], entity_1_prs[i - 2][5]);
-				entityList[i].GetTransform()->SetScale(entity_1_prs[i - 2][6], entity_1_prs[i - 2][7], entity_1_prs[i - 2][8]);
-			}
-			if (i == 0) 
-			{
-				entityList[i].GetTransform()->Rotate(0.0f, deltaTime, 0.0f);
-			}
-			SetExternalData(guiTint, camera->GetView(), camera->GetProj(), entityList[i]);
+			if (cameraChoice == 0) { SetExternalData(guiTint, camera->GetView(), camera->GetProj(), entityList[i]); }
+			else { SetExternalData(guiTint, secondCamera->GetView(), secondCamera->GetProj(), entityList[i]); }
 			entityList[i].Draw();
 		}
 	}
