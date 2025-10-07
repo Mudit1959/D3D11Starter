@@ -1,7 +1,8 @@
 #include "Entity.h"
-Entity::Entity(std::shared_ptr<Mesh> m) 
+Entity::Entity(std::shared_ptr<Mesh> meshIn, std::shared_ptr<Material> materialIn) 
 {
-	mesh = m;
+	mesh = meshIn;
+	material = materialIn;
 }
 
 Transform* Entity::GetTransform() 
@@ -11,6 +12,8 @@ Transform* Entity::GetTransform()
 
 void Entity::Draw() 
 {
+	Graphics::Context->VSSetShader(material->GetVS().Get(), 0, 0);
+	Graphics::Context->PSSetShader(material->GetPS().Get(), 0, 0);
 	mesh->Draw();
 }
 

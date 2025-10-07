@@ -1,0 +1,39 @@
+// --------------------------------------------------------
+// Loads shaders from compiled shader object (.cso) files
+// and also created the Input Layout that describes our 
+// vertex data to the rendering pipeline. 
+// - Input Layout creation is done here because it must 
+//    be verified against vertex shader byte code
+// - We'll have that byte code already loaded below
+// --------------------------------------------------------
+
+// BLOBs (or Binary Large OBjects) for reading raw data from external files
+// - This is a simplified way of handling big chunks of external data
+// - Literally just a big array of bytes read from a file
+ID3DBlob* pixelShaderBlob;
+ID3DBlob* vertexShaderBlob;
+
+// Loading shaders
+//  - Visual Studio will compile our shaders at build time
+//  - They are saved as .cso (Compiled Shader Object) files
+//  - We need to load them when the application starts
+{
+	// Read our compiled shader code files into blobs
+	// - Essentially just "open the file and plop its contents here"
+	// - Uses the custom FixPath() helper from Helpers.h to ensure relative paths
+	// - Note the "L" before the string - this tells the compiler the string uses wide characters
+	D3DReadFileToBlob(FixPath(L"PixelShader.cso").c_str(), &pixelShaderBlob);
+	D3DReadFileToBlob(FixPath(L"VertexShader.cso").c_str(), &vertexShaderBlob);
+
+	// Create the actual Direct3D shaders on the GPU
+	Graphics::Device->CreatePixelShader(
+		pixelShaderBlob->GetBufferPointer(),	// Pointer to blob's contents
+		pixelShaderBlob->GetBufferSize(),		// How big is that data?
+		0,										// No classes in this shader
+		pixelShader.GetAddressOf());			// Address of the ID3D11PixelShader pointer
+
+	Graphics::Device->CreateVertexShader(
+		vertexShaderBlob->GetBufferPointer(),	// Get a pointer to the blob's contents
+		vertexShaderBlob->GetBufferSize(),		// How big is that data?
+		0,										// No classes in this shader
+		vertexShader.GetAddressOf());			// The address of the ID3D11VertexShader pointer

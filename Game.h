@@ -28,7 +28,9 @@ public:
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
-	void LoadShaders();
+	// void LoadShaders();
+	void LoadVertexShader(std::wstring path);
+	void LoadPixelShader(std::wstring path);
 	void CreateGeometry();
 	void UpdateImGui(float deltaTime);
 	void RefreshUI();
@@ -50,8 +52,8 @@ private:
 	//Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 
 	// Shaders and shader-related constructs
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
+	//Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
+	//Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstBuffer;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 };
