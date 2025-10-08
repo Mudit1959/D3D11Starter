@@ -143,5 +143,6 @@
   <ItemGroup>
     <Text Include="BufferSetup.txt" />
     <Text Include="Shader.txt" />
+    <Text Include="OldMeshes.txt" />
   </ItemGroup>
 </Project>

@@ -11,6 +11,7 @@ public:
 	Transform* GetTransform();
 	void Draw();
 	int GetMeshIndexCount();
+	DirectX::XMFLOAT4 GetTint();
 
 private:
 	std::shared_ptr<Mesh> mesh;

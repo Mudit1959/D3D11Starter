@@ -1,0 +1,61 @@
+// Set up the vertices of the triangle we would like to draw
+	// - We're going to copy this array, exactly as it exists in CPU memory
+	//    over to a Direct3D-controlled data structure on the GPU (the vertex buffer)
+	// - Note: Since we don't have a camera or really any concept of
+	//    a "3d world" yet, we're simply describing positions within the
+	//    bounds of how the rasterizer sees our screen: [-1 to +1] on X and Y
+	// - This means (0,0) is at the very center of the screen.
+	// - These are known as "Normalized Device Coordinates" or "Homogeneous 
+	//    Screen Coords", which are ways to describe a position without
+	//    knowing the exact size (in pixels) of the image/window/etc.  
+	// - Long story short: Resizing the window also resizes the triangle,
+	//    since we're describing the triangle in terms of the window itself
+	Vertex triangleMeshVertices[] =
+	{
+		{ XMFLOAT3(+0.0f, +0.5f, +0.0f), red },
+		{ XMFLOAT3(+0.5f, -0.5f, +0.0f), blue },
+		{ XMFLOAT3(-0.5f, -0.5f, +0.0f), green },
+	};
+
+	// Set up indices, which tell us which vertices to use and in which order
+	// - This is redundant for just 3 vertices, but will be more useful later
+	// - Indices are technically not required if the vertices are in the buffer 
+	//    in the correct order and each one will be used exactly once
+	// - But just to see how it's done...
+	unsigned int triangleMeshIndices[] = { 0, 1, 2 };
+
+	Vertex rectMeshVertices[] =
+	{
+		{XMFLOAT3(-0.7f, +0.7f, +0.0f), red},
+		{XMFLOAT3(-0.3f, +0.7f, +0.0f), blue},
+		{XMFLOAT3(-0.3f, +0.5f, +0.0f), blue},
+		{XMFLOAT3(-0.7f, +0.5f, +0.0f), red},
+	};
+	unsigned int rectMeshIndices[] = { 0, 1, 2, 3, 0, 2 };
+
+	Vertex octMeshVertices[] =
+	{
+		{XMFLOAT3(+0.7f-0.05f, -0.7f, +0.0f), black},
+		{XMFLOAT3(+0.6f-0.05f, -0.5f, +0.0f), white},
+		{XMFLOAT3(+0.6f-0.05f, -0.3f, +0.0f), black},
+		{XMFLOAT3(+0.7f-0.05f, -0.1f, +0.0f), white},
+		{XMFLOAT3(+0.9f-0.05f, -0.1f, +0.0f), black},
+		{XMFLOAT3(+1.0f-0.05f, -0.3f, +0.0f), black},
+		{XMFLOAT3(+1.0f-0.05f, -0.5f, +0.0f), white},
+		{XMFLOAT3(+0.9f-0.05f, -0.7f, +0.0f), black}
+	};
+
+	unsigned int octMeshIndices[] =
+	{
+		0, 1, 2,
+		0, 2, 3,
+		0, 3, 4,
+		0, 4, 5,
+		0, 5, 6, 
+		0, 6, 7,
+	};
+
+	// Meshes created
+	triangleMesh = std::make_shared<Mesh>(&triangleMeshVertices[0], ARRAYSIZE(triangleMeshVertices), &triangleMeshIndices[0], ARRAYSIZE(triangleMeshIndices));
+	rectMesh = std::make_shared<Mesh>(&rectMeshVertices[0], ARRAYSIZE(rectMeshVertices), &rectMeshIndices[0], ARRAYSIZE(rectMeshIndices));
+	octMesh = std::make_shared<Mesh>(&octMeshVertices[0], ARRAYSIZE(octMeshVertices), &octMeshIndices[0], ARRAYSIZE(octMeshIndices));

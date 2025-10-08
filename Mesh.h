@@ -4,6 +4,9 @@
 #include "Vertex.h"
 #include "Graphics.h"
 #include <DirectXMath.h>
+#include <fstream>
+#include <stdexcept>
+#include <vector>
 
 /*
 * This Mesh class makes use of the predefined Vertex struct. 
@@ -26,6 +29,8 @@ public:
 
 	// ~ Constructor, Copy Constructor, Copy Assignment, Destructor
 	Mesh(Vertex* v, int vCount, unsigned int* i, int iCount); // Constructor
+	Mesh(const char* objFilePath);
+	void CreateBuffers(Vertex* v, int vCount, unsigned int* i, int iCount);
 	//Mesh(const Mesh& other); // Copy Constructor
 	//Mesh& operator= (const Mesh& other); // Copy Assignment
 	~Mesh();

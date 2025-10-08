@@ -21,3 +21,5 @@ int Entity::GetMeshIndexCount()
 {
 	return mesh->GetIndexCount();
 }
+
+DirectX::XMFLOAT4 Entity::GetTint() { return material->GetTint(); }

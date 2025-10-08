@@ -157,6 +157,7 @@ void Game::RefreshUI()
 
 	if (ImGui::TreeNode("Meshes")) 
 	{
+		/*
 		if (ImGui::TreeNode("Triangle"))
 		{
 			ImGui::Text("Triangles: %i", triangleMesh->GetIndexCount()/3);
@@ -183,7 +184,7 @@ void Game::RefreshUI()
 		}
 
 		ImGui::TreePop();
-
+		*/
 		
 	}
 
@@ -291,22 +292,27 @@ void Game::LoadVertexShader(std::wstring path)
 	//  - Doing this NOW because it requires a vertex shader's byte code to verify against!
 	//  - Luckily, we already have that loaded (the vertex shader blob above)
 		{
-			D3D11_INPUT_ELEMENT_DESC inputElements[2] = {};
+			D3D11_INPUT_ELEMENT_DESC inputElements[3] = {};
 
 			// Set up the first element - a position, which is 3 float values
 			inputElements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;				// Most formats are described as color channels; really it just means "Three 32-bit floats"
 			inputElements[0].SemanticName = "POSITION";							// This is "POSITION" - needs to match the semantics in our vertex shader input!
 			inputElements[0].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// How far into the vertex is this?  Assume it's after the previous element
 
-			// Set up the second element - a color, which is 4 more float values
-			inputElements[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;			// 4x 32-bit floats
-			inputElements[1].SemanticName = "COLOR";							// Match our vertex shader input!
+			// Set up the second element - a UV or Texture coordinate, which is 2 more float values
+			inputElements[1].Format = DXGI_FORMAT_R32G32_FLOAT;			// 2x 32-bit floats
+			inputElements[1].SemanticName = "TEXCOORD";							// Match our vertex shader input!
 			inputElements[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// After the previous element
+
+			// Set up the third element - a Normal, which is 3 more float values
+			inputElements[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;			// 3x 32-bit floats
+			inputElements[2].SemanticName = "NORMAL";							// Match our vertex shader input!
+			inputElements[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// After the previous element
 
 			// Create the input layout, verifying our description against actual shader code
 			Graphics::Device->CreateInputLayout(
 				inputElements,							// An array of descriptions
-				2,										// How many elements in that array?
+				3,										// How many elements in that array?
 				vertexShaderBlob->GetBufferPointer(),	// Pointer to the code of a shader that uses this layout
 				vertexShaderBlob->GetBufferSize(),		// Size of the shader code that uses this layout
 				inputLayout.GetAddressOf());			// Address of the resulting ID3D11InputLayout pointer
@@ -371,83 +377,27 @@ void Game::CreateGeometry()
 	XMFLOAT4 black = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	// Set up the vertices of the triangle we would like to draw
-	// - We're going to copy this array, exactly as it exists in CPU memory
-	//    over to a Direct3D-controlled data structure on the GPU (the vertex buffer)
-	// - Note: Since we don't have a camera or really any concept of
-	//    a "3d world" yet, we're simply describing positions within the
-	//    bounds of how the rasterizer sees our screen: [-1 to +1] on X and Y
-	// - This means (0,0) is at the very center of the screen.
-	// - These are known as "Normalized Device Coordinates" or "Homogeneous 
-	//    Screen Coords", which are ways to describe a position without
-	//    knowing the exact size (in pixels) of the image/window/etc.  
-	// - Long story short: Resizing the window also resizes the triangle,
-	//    since we're describing the triangle in terms of the window itself
-	Vertex triangleMeshVertices[] =
-	{
-		{ XMFLOAT3(+0.0f, +0.5f, +0.0f), red },
-		{ XMFLOAT3(+0.5f, -0.5f, +0.0f), blue },
-		{ XMFLOAT3(-0.5f, -0.5f, +0.0f), green },
-	};
+	cubeMesh = std::make_shared<Mesh>(FixPath("../../Assets/Meshes/cube.ggp_obj").c_str());
+	cylinderMesh = std::make_shared<Mesh>(FixPath("../../Assets/Meshes/cylinder.ggp_obj").c_str());
+	helixMesh = std::make_shared<Mesh>(FixPath("../../Assets/Meshes/helix.ggp_obj").c_str());
+	quadMesh = std::make_shared<Mesh>(FixPath("../../Assets/Meshes/quad.ggp_obj").c_str());
+	quadDoubleMesh = std::make_shared<Mesh>(FixPath("../../Assets/Meshes/quad_double_sided.ggp_obj").c_str());
+	sphereMesh = std::make_shared<Mesh>(FixPath("../../Assets/Meshes/sphere.ggp_obj").c_str());
+	torusMesh = std::make_shared<Mesh>(FixPath("../../Assets/Meshes/torus.ggp_obj").c_str());
 
-	// Set up indices, which tell us which vertices to use and in which order
-	// - This is redundant for just 3 vertices, but will be more useful later
-	// - Indices are technically not required if the vertices are in the buffer 
-	//    in the correct order and each one will be used exactly once
-	// - But just to see how it's done...
-	unsigned int triangleMeshIndices[] = { 0, 1, 2 };
-
-	Vertex rectMeshVertices[] =
-	{
-		{XMFLOAT3(-0.7f, +0.7f, +0.0f), red},
-		{XMFLOAT3(-0.3f, +0.7f, +0.0f), blue},
-		{XMFLOAT3(-0.3f, +0.5f, +0.0f), blue},
-		{XMFLOAT3(-0.7f, +0.5f, +0.0f), red},
-	};
-	unsigned int rectMeshIndices[] = { 0, 1, 2, 3, 0, 2 };
-
-	Vertex octMeshVertices[] =
-	{
-		{XMFLOAT3(+0.7f-0.05f, -0.7f, +0.0f), black},
-		{XMFLOAT3(+0.6f-0.05f, -0.5f, +0.0f), white},
-		{XMFLOAT3(+0.6f-0.05f, -0.3f, +0.0f), black},
-		{XMFLOAT3(+0.7f-0.05f, -0.1f, +0.0f), white},
-		{XMFLOAT3(+0.9f-0.05f, -0.1f, +0.0f), black},
-		{XMFLOAT3(+1.0f-0.05f, -0.3f, +0.0f), black},
-		{XMFLOAT3(+1.0f-0.05f, -0.5f, +0.0f), white},
-		{XMFLOAT3(+0.9f-0.05f, -0.7f, +0.0f), black}
-	};
-
-	unsigned int octMeshIndices[] =
-	{
-		0, 1, 2,
-		0, 2, 3,
-		0, 3, 4,
-		0, 4, 5,
-		0, 5, 6, 
-		0, 6, 7,
-	};
-
-	// Meshes created
-	triangleMesh = std::make_shared<Mesh>(&triangleMeshVertices[0], ARRAYSIZE(triangleMeshVertices), &triangleMeshIndices[0], ARRAYSIZE(triangleMeshIndices));
-	rectMesh = std::make_shared<Mesh>(&rectMeshVertices[0], ARRAYSIZE(rectMeshVertices), &rectMeshIndices[0], ARRAYSIZE(rectMeshIndices));
-	octMesh = std::make_shared<Mesh>(&octMeshVertices[0], ARRAYSIZE(octMeshVertices), &octMeshIndices[0], ARRAYSIZE(octMeshIndices));
 
 	// Now to create entities using the meshes
 	// Entity 1
-	entityList.push_back(Entity(triangleMesh, materials[0]));
+	entityList.push_back(Entity(cubeMesh, materials[0]));
 	entityList[0].GetTransform()->MoveAbsolute(0.0f, 0.0f, 10.0f);
 
 	//Entity 2 - hardcoded position
-	entityList.push_back(Entity(triangleMesh, materials[1]));
+	entityList.push_back(Entity(helixMesh, materials[1]));
 	entityList[1].GetTransform()->MoveAbsolute(1.0f, 0.3f, 0.0f);
 
 	//Entity 3, 4, 5
-	entityList.push_back(Entity(triangleMesh, materials[2]));
-	entityList[2].GetTransform()->MoveAbsolute(0.0f, 0.0f, 30.0f);
-	entityList.push_back(Entity(octMesh, materials[1]));
-	entityList[3].GetTransform()->MoveAbsolute(10.0f, 0.0f, 20.0f);
-	entityList.push_back(Entity(octMesh, materials[2]));
+	entityList.push_back(Entity(sphereMesh, materials[2]));
+	entityList[2].GetTransform()->MoveAbsolute(10.0f, 0.0f, 0.0f);
 }
 
 
@@ -504,11 +454,11 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		entityList[0].GetTransform()->Rotate(0.0f, deltaTime, 0.0f);
 		float offset = sin(totalTime)/2;
-		entityList[3].GetTransform()->MoveAbsolute(0.0f, 0.0f, offset/100);
+		DirectX::XMFLOAT4 tint; 
 		for (int i = 0; i < entityList.size(); i++) 
 		{
-			if (cameraChoice == 0) { SetExternalData(guiTint, camera->GetView(), camera->GetProj(), entityList[i]); }
-			else { SetExternalData(guiTint, secondCamera->GetView(), secondCamera->GetProj(), entityList[i]); }
+			if (cameraChoice == 0) { SetExternalData(entityList[i].GetTint(), camera->GetView(), camera->GetProj(), entityList[i]); }
+			else { SetExternalData(entityList[i].GetTint(), secondCamera->GetView(), secondCamera->GetProj(), entityList[i]); }
 			entityList[i].Draw();
 		}
 	}
@@ -533,10 +483,10 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 }
 
-void Game::SetExternalData(float tint[4] , DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e)
+void Game::SetExternalData(DirectX::XMFLOAT4 tint , DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e)
 {
 	ExtraVertexData vsData;
-	vsData.colourTint = XMFLOAT4(tint);
+	vsData.colourTint = tint;
 	vsData.world = e.GetTransform()->GetWorldMatrix();
 	vsData.view = view;
 	vsData.proj = proj;

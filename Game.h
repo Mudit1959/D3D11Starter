@@ -23,7 +23,7 @@ public:
 	void Draw(float deltaTime, float totalTime);
 	void Initialize();
 	void OnResize();
-	void SetExternalData(float tint[4], DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e);
+	void SetExternalData(DirectX::XMFLOAT4 tint, DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e);
 
 private:
 
@@ -36,7 +36,7 @@ private:
 	void RefreshUI();
 
 	std::shared_ptr<Camera> camera, secondCamera;
-	std::shared_ptr<Mesh> triangleMesh, rectMesh, octMesh;
+	std::shared_ptr<Mesh> cubeMesh, sphereMesh, cylinderMesh, quadMesh, quadDoubleMesh, helixMesh, torusMesh;
 
 	bool showDemo;
 	float color[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
