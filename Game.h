@@ -55,6 +55,7 @@ private:
 	//Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	//Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstBuffer;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> psConstBuffer;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 };
 

@@ -486,17 +486,23 @@ void Game::Draw(float deltaTime, float totalTime)
 void Game::SetExternalData(DirectX::XMFLOAT4 tint , DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e)
 {
 	ExtraVertexData vsData;
-	vsData.colourTint = tint;
 	vsData.world = e.GetTransform()->GetWorldMatrix();
 	vsData.view = view;
 	vsData.proj = proj;
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+	D3D11_MAPPED_SUBRESOURCE vertexMappedBuffer = {};
 
-	Graphics::Context->Map(vsConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+	ExtraPixelData psData;
+	psData.colourTint = tint;
+	D3D11_MAPPED_SUBRESOURCE pixelMappedBuffer = {};
 
-	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-
+	Graphics::Context->Map(vsConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &vertexMappedBuffer);
+	memcpy(vertexMappedBuffer.pData, &vsData, sizeof(vsData));
 	Graphics::Context->Unmap(vsConstBuffer.Get(), 0);
+
+	Graphics::Context->Map(psConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &pixelMappedBuffer);
+	memcpy(pixelMappedBuffer.pData, &psData, sizeof(psData));
+	Graphics::Context->Unmap(psConstBuffer.Get(), 0);
+
 }
 
 

@@ -12,7 +12,11 @@ struct VertexToPixel
 	//  |    |                |
 	//  v    v                v
 	float4 screenPosition	: SV_POSITION;
-	float4 color			: COLOR;
+};
+
+cbuffer ExternalPixelData : register(b0)
+{
+    float4 colourTint : TINT;
 };
 
 // --------------------------------------------------------
@@ -26,9 +30,10 @@ struct VertexToPixel
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+	
 	// Just return the input color
 	// - This color (like most values passing through the rasterizer) is 
 	//   interpolated for each pixel between the corresponding vertices 
 	//   of the triangle we're rendering
-	return input.color;
+	return colourTint;
 }
