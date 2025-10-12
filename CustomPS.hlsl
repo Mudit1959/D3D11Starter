@@ -1,4 +1,3 @@
-
 // Struct representing the data we expect to receive from earlier pipeline stages
 // - Should match the output of our corresponding vertex shader
 // - The name of the struct itself is unimportant
@@ -11,7 +10,7 @@ struct VertexToPixel
 	//  |   Name          Semantic
 	//  |    |                |
 	//  v    v                v
-	float4 screenPosition	: SV_POSITION;
+    float4 screenPosition : SV_POSITION;
     float2 uv : TEXCOORD;
     float3 normal : NORMAL;
 };
@@ -21,6 +20,11 @@ cbuffer ExternalPixelData : register(b0)
     float4 colourTint : TINT;
     float totalTime : TIME;
 };
+
+float random(float2 s)
+{
+    return frac(sin(dot(s, float2(12.9898, 78.233))) * 43758.5453123);
+}
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -37,5 +41,14 @@ float4 main(VertexToPixel input) : SV_TARGET
 	// - This color (like most values passing through the rasterizer) is 
 	//   interpolated for each pixel between the corresponding vertices 
 	//   of the triangle we're rendering
-    return colourTint;
+    float sinVal = sin(input.uv.r * 25 * totalTime * 0.1);
+    float yVal = input.uv.g;
+	
+	// u goes from 0 - 25 if multiplied is x
+	// v goes from 0 - 25 if multiplied is y
+	// if v matches sin(u), I want to display it in red
+	// 
+    return float4(sinVal, 0.0f, 0.0f, 1.0f);
+
 }
+

@@ -37,6 +37,8 @@ struct VertexToPixel
 	//  |    |                |
 	//  v    v                v
 	float4 screenPosition	: SV_POSITION;	// XYZW position (System Value Position)
+    float2 uv				: TEXCOORD;
+    float3 normal			: NORMAL;
 };
 
 // --------------------------------------------------------
@@ -61,6 +63,8 @@ VertexToPixel main( VertexShaderInput input )
 	//   a perspective projection matrix, which we'll get to in the future).
     float4x4 wvp = mul(proj, mul(view, world));
     output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
+    output.normal = input.normal;
+    output.uv = input.uv;
 
 	// Pass the color through 
 	// - The values will be interpolated per-pixel by the rasterizer

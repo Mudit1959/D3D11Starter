@@ -23,7 +23,7 @@ public:
 	void Draw(float deltaTime, float totalTime);
 	void Initialize();
 	void OnResize();
-	void SetExternalData(DirectX::XMFLOAT4 tint, DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e);
+	void SetExternalData(float totalTime, DirectX::XMFLOAT4 tint, DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e);
 
 private:
 
@@ -56,6 +56,6 @@ private:
 	//Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> psConstBuffer;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+	Microsoft::WRL::ComPtr<ID3D11InputLayout> vertexInputLayout;
 };
 

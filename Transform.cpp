@@ -85,7 +85,7 @@ void Transform::Scale(DirectX::XMFLOAT3 scale)
 DirectX::XMFLOAT4X4 Transform::GetWorldMatrix() 
 { 
 	if (edited == 0) { return world; }
-	DirectX::XMMATRIX worldMatrix = DirectX::XMMatrixScaling(scale.x, scale.y, scale.z) * DirectX::XMMatrixRotationRollPitchYaw(rotation.z, rotation.x, rotation.y) * DirectX::XMMatrixTranslation(position.x, position.y, position.z);
+	DirectX::XMMATRIX worldMatrix = DirectX::XMMatrixScaling(scale.x, scale.y, scale.z) * DirectX::XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z) * DirectX::XMMatrixTranslation(position.x, position.y, position.z);
 	DirectX::XMStoreFloat4x4(&world, worldMatrix);
 	DirectX::XMStoreFloat4x4(&worldInverseT,
 		DirectX::XMMatrixInverse(0, DirectX::XMMatrixTranspose(worldMatrix)));

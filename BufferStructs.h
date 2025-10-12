@@ -11,4 +11,5 @@ struct ExtraVertexData
 struct ExtraPixelData 
 {
 	DirectX::XMFLOAT4 colourTint;
+	float totalTime;
 };

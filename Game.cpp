@@ -47,7 +47,7 @@ Game::Game()
 	//  - You'll be expanding and/or replacing these later
 	CreateGeometry();
 	Initialize(); //Initialize ImGui
-	camera = std::make_shared<Camera>(0.0f, 0.0f, -10.0f, Window::AspectRatio());
+	camera = std::make_shared<Camera>(10.0f, 0.0f, -30.0f, Window::AspectRatio());
 	secondCamera = std::make_shared<Camera>(0.0f, 0.0f, -10.0f, Window::AspectRatio());
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -62,13 +62,14 @@ Game::Game()
 		// Ensure the pipeline knows how to interpret all the numbers stored in
 		// the vertex buffer. For this course, all of your vertices will probably
 		// have the same layout, so we can just set this once at startup.
-		Graphics::Context->IASetInputLayout(inputLayout.Get());
-
+		Graphics::Context->IASetInputLayout(vertexInputLayout.Get());
+		
 		// Set the active vertex and pixel shaders
 		//  - Once you start applying different shaders to different objects,
 		//    these calls will need to happen multiple times per frame
-		Graphics::Context->VSSetShader(vertexShaders[0].Get(), 0, 0);
-		Graphics::Context->PSSetShader(pixelShaders[0].Get(), 0, 0);
+		//Graphics::Context->VSSetShader(vertexShaders[0].Get(), 0, 0);
+		//Graphics::Context->PSSetShader(pixelShaders[0].Get(), 0, 0);
+		
 	}
 }
 
@@ -193,7 +194,7 @@ void Game::RefreshUI()
 		if (ImGui::TreeNode("Entity 1")) 
 		{
 			ImGui::DragFloat3("Position", &entity_1_prs[0][0], 0.01f, -1.0f, 1.0f);
-			ImGui::DragFloat3("Rotation", &entity_1_prs[0][3], 0.01f, 0, 2*3.14);
+			ImGui::DragFloat3("Rotation", &entity_1_prs[0][3], 0.01f, 0, 2.0f*3.14);
 			ImGui::DragFloat3("Scale", &entity_1_prs[0][6], 0.01f, 0.01f, 10.0f);
 			ImGui::Text("Indices: %i", entityList[2].GetMeshIndexCount());
 			ImGui::TreePop();
@@ -201,7 +202,7 @@ void Game::RefreshUI()
 		if (ImGui::TreeNode("Entity 2"))
 		{
 			ImGui::DragFloat3("Position", &entity_1_prs[1][0], 0.01f, -1.0f, 1.0f);
-			ImGui::DragFloat3("Rotation", &entity_1_prs[1][3], 0.01f, 0, 2 * 3.14);
+			ImGui::DragFloat3("Rotation", &entity_1_prs[1][3], 0.01f, 0, 2.0f * 3.14);
 			ImGui::DragFloat3("Scale", &entity_1_prs[1][6], 0.01f, 0.01f, 10.0f);
 			ImGui::Text("Indices: %i", entityList[3].GetMeshIndexCount());
 			ImGui::TreePop();
@@ -209,7 +210,7 @@ void Game::RefreshUI()
 		if (ImGui::TreeNode("Entity 3"))
 		{
 			ImGui::DragFloat3("Position", &entity_1_prs[2][0], 0.01f, -1.0f, 1.0f);
-			ImGui::DragFloat3("Rotation", &entity_1_prs[2][3], 0.01f, 0, 2 * 3.14);
+			ImGui::DragFloat3("Rotation", &entity_1_prs[2][3], 0.01f, 0, 2.0f * 3.14);
 			ImGui::DragFloat3("Scale", &entity_1_prs[2][6], 0.01f, 0.01f, 10.0f);
 			ImGui::Text("Indices: %i", entityList[4].GetMeshIndexCount());
 			ImGui::TreePop();
@@ -286,7 +287,7 @@ void Game::LoadVertexShader(std::wstring path)
 			0,										// No classes in this shader
 			vertexShaders[vertexShaders.size() - 1].GetAddressOf());			// The address of the ID3D11VertexShader pointer
 
-		// Create an input layout 
+	// Create an input layout - INPUT LAYOUTS ARE ONLY REQUIRED FOR THE VERTEX SHADER!!!!
 	//  - This describes the layout of data sent to a vertex shader
 	//  - In other words, it describes how to interpret data (numbers) in a vertex buffer
 	//  - Doing this NOW because it requires a vertex shader's byte code to verify against!
@@ -315,7 +316,7 @@ void Game::LoadVertexShader(std::wstring path)
 				3,										// How many elements in that array?
 				vertexShaderBlob->GetBufferPointer(),	// Pointer to the code of a shader that uses this layout
 				vertexShaderBlob->GetBufferSize(),		// Size of the shader code that uses this layout
-				inputLayout.GetAddressOf());			// Address of the resulting ID3D11InputLayout pointer
+				vertexInputLayout.GetAddressOf());		// Address of the resulting ID3D11InputLayout pointer
 		}
 }
 
@@ -331,6 +332,7 @@ void Game::LoadPixelShader(std::wstring path)
 		pixelShaderBlob->GetBufferSize(),
 		0,
 		pixelShaders[pixelShaders.size() - 1].GetAddressOf());
+
 }
 
 
@@ -340,20 +342,40 @@ void Game::LoadPixelShader(std::wstring path)
 // --------------------------------------------------------
 void Game::CreateGeometry()
 {
+	// Create some temporary variables to represent colors
+	// - Not necessary, just makes things more readable
+	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	XMFLOAT4 black = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
 	// Load shaders, create materials
 	{
 		LoadVertexShader(FixPath(L"VertexShader.cso"));
+
 		LoadPixelShader(FixPath(L"PixelShader.cso"));
+		LoadPixelShader(FixPath(L"DebugUVs.cso"));
+		LoadPixelShader(FixPath(L"DebugNormals.cso"));
+		LoadPixelShader(FixPath(L"CustomPS.cso"));
 
 		// Shaders are loaded
 
-		materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vertexShaders[0], pixelShaders[0]));
-		materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0.676f, 0.43f, 0.43f, 1.0f), vertexShaders[0], pixelShaders[0]));
-		materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0.013f, 0.392f, 0.125f, 1.0f), vertexShaders[0], pixelShaders[0]));
+		materials.push_back(std::make_shared<Material>(white, vertexShaders[0], pixelShaders[0])); // 0 - white
+		materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0.676f, 0.43f, 0.43f, 1.0f), vertexShaders[0], pixelShaders[0])); // 1 - dull orange
+		materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0.013f, 0.392f, 0.125f, 1.0f), vertexShaders[0], pixelShaders[0])); // 2 - green
+		materials.push_back(std::make_shared<Material>(red, vertexShaders[0], pixelShaders[0])); // 3 - red
+		materials.push_back(std::make_shared<Material>(blue, vertexShaders[0], pixelShaders[0])); // 4 - blue
+		materials.push_back(std::make_shared<Material>(black, vertexShaders[0], pixelShaders[0])); // 5 - black
+
+		materials.push_back(std::make_shared<Material>(white, vertexShaders[0], pixelShaders[1])); // 6 - UV material
+		materials.push_back(std::make_shared<Material>(white, vertexShaders[0], pixelShaders[2])); // 7 - Normals material
+		materials.push_back(std::make_shared<Material>(white, vertexShaders[0], pixelShaders[3])); // 8 - Custom material
+
 	}
 
 
-	// Create the buffer to feed external data to the GPU
+	// Create the buffers to feed external data to the GPU
 	{
 		// 1. Define the constant buffer description - eData(external Data), eb(external data buffer)
 		unsigned int eDataSize = ((sizeof(ExtraVertexData) + 15) / 16) * 16;
@@ -365,17 +387,21 @@ void Game::CreateGeometry()
 		eb.MiscFlags = 0;
 		eb.StructureByteStride = 0;
 
+		unsigned int pDataSize = ((sizeof(ExtraPixelData) + 15) / 16) * 16;
+		D3D11_BUFFER_DESC p = {};
+		p.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		p.ByteWidth = pDataSize;
+		p.Usage = D3D11_USAGE_DYNAMIC;
+		p.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+		p.MiscFlags = 0;
+		p.StructureByteStride = 0;
+
 		//2. Create the constant buffer
 		Graphics::Device->CreateBuffer(&eb, 0, vsConstBuffer.GetAddressOf());
+		Graphics::Device->CreateBuffer(&p, 0, psConstBuffer.GetAddressOf());
 	}
 
-	// Create some temporary variables to represent colors
-	// - Not necessary, just makes things more readable
-	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	XMFLOAT4 black = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	
 
 	cubeMesh = std::make_shared<Mesh>(FixPath("../../Assets/Meshes/cube.ggp_obj").c_str());
 	cylinderMesh = std::make_shared<Mesh>(FixPath("../../Assets/Meshes/cylinder.ggp_obj").c_str());
@@ -387,17 +413,42 @@ void Game::CreateGeometry()
 
 
 	// Now to create entities using the meshes
-	// Entity 1
+	
+
+	entityList.push_back(Entity(cubeMesh, materials[7]));
+	entityList.push_back(Entity(cylinderMesh, materials[7]));
+	entityList.push_back(Entity(helixMesh, materials[7]));
+	entityList.push_back(Entity(quadMesh, materials[7]));
+	entityList.push_back(Entity(quadDoubleMesh, materials[7]));
+	entityList.push_back(Entity(sphereMesh, materials[7]));
+	entityList.push_back(Entity(torusMesh, materials[7]));
+
+	entityList.push_back(Entity(cubeMesh,		materials[6]));
+	entityList.push_back(Entity(cylinderMesh,	materials[6]));
+	entityList.push_back(Entity(helixMesh,		materials[6]));
+	entityList.push_back(Entity(quadMesh,		materials[6]));
+	entityList.push_back(Entity(quadDoubleMesh, materials[6]));
+	entityList.push_back(Entity(sphereMesh,		materials[6]));
+	entityList.push_back(Entity(torusMesh,		materials[6]));
+
+	
+
 	entityList.push_back(Entity(cubeMesh, materials[0]));
-	entityList[0].GetTransform()->MoveAbsolute(0.0f, 0.0f, 10.0f);
+	entityList.push_back(Entity(cylinderMesh, materials[1]));
+	entityList.push_back(Entity(helixMesh, materials[2]));
+	entityList.push_back(Entity(quadMesh, materials[3]));
+	entityList.push_back(Entity(quadDoubleMesh, materials[4]));
+	entityList.push_back(Entity(sphereMesh, materials[8]));
+	entityList.push_back(Entity(torusMesh, materials[3]));
 
-	//Entity 2 - hardcoded position
-	entityList.push_back(Entity(helixMesh, materials[1]));
-	entityList[1].GetTransform()->MoveAbsolute(1.0f, 0.3f, 0.0f);
+	for (unsigned int i = 0; i < 3; i++) 
+	{
+		for (unsigned int j = 0; j < 7; j++) 
+		{
+			entityList[(i * 7) + j].GetTransform()->MoveAbsolute((4.0f*j), (-4.0f * i), 0.0f);
+		}
+	}
 
-	//Entity 3, 4, 5
-	entityList.push_back(Entity(sphereMesh, materials[2]));
-	entityList[2].GetTransform()->MoveAbsolute(10.0f, 0.0f, 0.0f);
 }
 
 
@@ -445,6 +496,7 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		// Bind the constant buffer
 		Graphics::Context->VSSetConstantBuffers(0, 1, vsConstBuffer.GetAddressOf());
+		Graphics::Context->PSSetConstantBuffers(0, 1, psConstBuffer.GetAddressOf());
 	}
 
 	// DRAW geometry
@@ -452,14 +504,35 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - Other Direct3D calls will also be necessary to do more complex things
 	{
 
-		entityList[0].GetTransform()->Rotate(0.0f, deltaTime, 0.0f);
+		
 		float offset = sin(totalTime)/2;
-		DirectX::XMFLOAT4 tint; 
-		for (int i = 0; i < entityList.size(); i++) 
+		for (int i = 0; i < 21; i++) 
 		{
-			if (cameraChoice == 0) { SetExternalData(entityList[i].GetTint(), camera->GetView(), camera->GetProj(), entityList[i]); }
-			else { SetExternalData(entityList[i].GetTint(), secondCamera->GetView(), secondCamera->GetProj(), entityList[i]); }
+			entityList[i].GetTransform()->Rotate(0.0f, deltaTime, 0.0f);
+		}
+		
+		for (int i = 0; i < 7; i++)
+		{
+			if (cameraChoice == 0) { SetExternalData(totalTime, entityList[i].GetTint(), camera->GetView(), camera->GetProj(), entityList[i]); }
+			else { SetExternalData(totalTime, entityList[ i].GetTint(), secondCamera->GetView(), secondCamera->GetProj(), entityList[i]); }
 			entityList[i].Draw();
+		}
+
+		
+		for (int i = 0; i < 7; i++)
+		{
+			if (cameraChoice == 0) { SetExternalData(totalTime, entityList[7 + i].GetTint(), camera->GetView(), camera->GetProj(), entityList[7 + i]); }
+			else { SetExternalData(totalTime, entityList[7 + i].GetTint(), secondCamera->GetView(), secondCamera->GetProj(), entityList[7 + i]); }
+			entityList[7 + i].Draw();
+		}
+
+
+		
+		for (int i = 0; i < 7; i++) 
+		{
+			if (cameraChoice == 0) { SetExternalData(totalTime, entityList[14 + i].GetTint(), camera->GetView(), camera->GetProj(), entityList[14 + i]); }
+			else { SetExternalData(totalTime, entityList[14 + i].GetTint(), secondCamera->GetView(), secondCamera->GetProj(), entityList[14 + i]); }
+			entityList[14 + i].Draw();
 		}
 	}
 
@@ -483,7 +556,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 }
 
-void Game::SetExternalData(DirectX::XMFLOAT4 tint , DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e)
+void Game::SetExternalData(float totalTime, DirectX::XMFLOAT4 tint , DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e)
 {
 	ExtraVertexData vsData;
 	vsData.world = e.GetTransform()->GetWorldMatrix();
@@ -493,6 +566,7 @@ void Game::SetExternalData(DirectX::XMFLOAT4 tint , DirectX::XMFLOAT4X4 view, Di
 
 	ExtraPixelData psData;
 	psData.colourTint = tint;
+	psData.totalTime = totalTime;
 	D3D11_MAPPED_SUBRESOURCE pixelMappedBuffer = {};
 
 	Graphics::Context->Map(vsConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &vertexMappedBuffer);
