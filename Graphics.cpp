@@ -154,6 +154,23 @@ HRESULT Graphics::Initialize(unsigned int windowWidth, unsigned int windowHeight
 	// will also set the appropriate viewport.
 	ResizeBuffers(windowWidth, windowHeight);
 
+	//Ring Buffer Initialization
+	Context->QueryInterface<ID3D11DeviceContext1>(Context1.GetAddressOf());
+
+	cbOffsetBytes = 0;
+	cbSizeBytes = 256 * 1000; // The buffer size must be a multiple of 256, therefore...
+	cbSizeBytes = ((cbSizeBytes + 255) / 256) * 256;
+
+	D3D11_BUFFER_DESC ringBufferDesc = {};
+	ringBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	ringBufferDesc.ByteWidth = cbSizeBytes;
+	ringBufferDesc.Usage = D3D11_USAGE_DYNAMIC; // It will change over the course of the application's run
+	ringBufferDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+	ringBufferDesc.MiscFlags = 0;
+	ringBufferDesc.StructureByteStride = 0;
+
+	Device->CreateBuffer(&ringBufferDesc, 0, ConstBufferHeap.GetAddressOf());
+
 #if defined(DEBUG) || defined(_DEBUG)
 	// If we're in debug mode, set up the info queue to
 	// get debug messages we can print to our console
@@ -319,4 +336,66 @@ void Graphics::PrintDebugMessages()
 
 	// Clear any messages we've printed
 	InfoQueue->ClearStoredMessages();
+}
+
+void Graphics::FillAndBindNextConstantBuffer(void* data, unsigned int dataSizeInBytes, D3D11_SHADER_TYPE shaderType, unsigned int registerSlot) 
+{
+
+	// 1. Get the size of the incoming data, and pad the size to be a multiple of 256
+	unsigned int incomingSize = ((dataSizeInBytes + 255) / 256) * 256;
+
+	// 1.5 Check if the remaining space in the buffer is sufficient to store incoming data, otherwise *circle* back around
+	if (incomingSize + cbOffsetBytes > cbSizeBytes) 
+	{
+		cbOffsetBytes = 0;
+	}
+
+	// 2. Copy the data over, by first mapping the storage size, and them using memcpy
+	// Mapping -> Specify the buffer to write into and the kind of data being written(can be disposed, should not be disposed)
+	D3D11_MAPPED_SUBRESOURCE map{};
+	Context->Map(
+		ConstBufferHeap.Get(),
+		0,
+		D3D11_MAP_WRITE_NO_OVERWRITE,
+		0,
+		&map);
+	// memcpy -> Make sure data is written into the right address, remember we just checked if the incoming data will fit, 
+	// calculations for the address to be written to still need to be done!
+	void* uploadAddress = reinterpret_cast<void*>((UINT64)map.pData + cbOffsetBytes);
+	memcpy(uploadAddress, data, dataSizeInBytes);
+
+	// UNMAP
+	Context->Unmap(ConstBufferHeap.Get(), 0);
+
+	// 3. Tell the GPU the data is ready to use, known as BINDING, by specifying byte boundaries. 
+	// This is where 11.1 version is crucial. I cannot fathom why, I have been told it is
+	// Since we work with HLSL, only 16-byte boundaries need to be taken care of.
+	unsigned int existingConstant = cbOffsetBytes/16; // How many 16 byte blocks are occupied already?
+	unsigned int incomingConstant = incomingSize/16; // How many 16 byte blocks will be occupied?
+	// Use a switch statement for the vertex and pixel shaders that follow the 16-byte boundary rule.
+	switch (shaderType) 
+	{
+		case D3D11_VERTEX_SHADER:
+			Context1->VSSetConstantBuffers1(
+				registerSlot,
+				1,
+				ConstBufferHeap.GetAddressOf(),
+				&existingConstant,
+				&incomingConstant);
+			break;
+
+		case D3D11_PIXEL_SHADER:
+			Context1->PSSetConstantBuffers1(
+				registerSlot,
+				1,
+				ConstBufferHeap.GetAddressOf(),
+				&existingConstant,
+				&incomingConstant);
+			break;
+
+	}
+
+	// 4. Update the offset value - tells the next free space to go to. 
+	cbOffsetBytes += incomingSize;
+
 }

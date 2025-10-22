@@ -194,7 +194,7 @@ void Game::RefreshUI()
 		if (ImGui::TreeNode("Entity 1")) 
 		{
 			ImGui::DragFloat3("Position", &entity_1_prs[0][0], 0.01f, -1.0f, 1.0f);
-			ImGui::DragFloat3("Rotation", &entity_1_prs[0][3], 0.01f, 0, 2.0f*3.14);
+			ImGui::DragFloat3("Rotation", &entity_1_prs[0][3], 0.01f, 0, 2.0f*3.14f);
 			ImGui::DragFloat3("Scale", &entity_1_prs[0][6], 0.01f, 0.01f, 10.0f);
 			ImGui::Text("Indices: %i", entityList[2].GetMeshIndexCount());
 			ImGui::TreePop();
@@ -202,7 +202,7 @@ void Game::RefreshUI()
 		if (ImGui::TreeNode("Entity 2"))
 		{
 			ImGui::DragFloat3("Position", &entity_1_prs[1][0], 0.01f, -1.0f, 1.0f);
-			ImGui::DragFloat3("Rotation", &entity_1_prs[1][3], 0.01f, 0, 2.0f * 3.14);
+			ImGui::DragFloat3("Rotation", &entity_1_prs[1][3], 0.01f, 0, 2.0f * 3.14f);
 			ImGui::DragFloat3("Scale", &entity_1_prs[1][6], 0.01f, 0.01f, 10.0f);
 			ImGui::Text("Indices: %i", entityList[3].GetMeshIndexCount());
 			ImGui::TreePop();
@@ -210,7 +210,7 @@ void Game::RefreshUI()
 		if (ImGui::TreeNode("Entity 3"))
 		{
 			ImGui::DragFloat3("Position", &entity_1_prs[2][0], 0.01f, -1.0f, 1.0f);
-			ImGui::DragFloat3("Rotation", &entity_1_prs[2][3], 0.01f, 0, 2.0f * 3.14);
+			ImGui::DragFloat3("Rotation", &entity_1_prs[2][3], 0.01f, 0, 2.0f * 3.14f);
 			ImGui::DragFloat3("Scale", &entity_1_prs[2][6], 0.01f, 0.01f, 10.0f);
 			ImGui::Text("Indices: %i", entityList[4].GetMeshIndexCount());
 			ImGui::TreePop();
@@ -569,13 +569,8 @@ void Game::SetExternalData(float totalTime, DirectX::XMFLOAT4 tint , DirectX::XM
 	psData.totalTime = totalTime;
 	D3D11_MAPPED_SUBRESOURCE pixelMappedBuffer = {};
 
-	Graphics::Context->Map(vsConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &vertexMappedBuffer);
-	memcpy(vertexMappedBuffer.pData, &vsData, sizeof(vsData));
-	Graphics::Context->Unmap(vsConstBuffer.Get(), 0);
-
-	Graphics::Context->Map(psConstBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &pixelMappedBuffer);
-	memcpy(pixelMappedBuffer.pData, &psData, sizeof(psData));
-	Graphics::Context->Unmap(psConstBuffer.Get(), 0);
+	Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(vsData), D3D11_VERTEX_SHADER, 0);
+	Graphics::FillAndBindNextConstantBuffer(&psData, sizeof(psData), D3D11_PIXEL_SHADER, 0);
 
 }
 
