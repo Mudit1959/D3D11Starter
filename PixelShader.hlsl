@@ -1,4 +1,10 @@
 
+Texture2D brick : register(t0); // "t" registers for textures
+Texture2D concrete : register(t1); // "t" registers for textures
+Texture2D crosswalk : register(t2); // "t" registers for textures
+Texture2D rock : register(t3); // "t" registers for textures
+SamplerState BasicSampler : register(s0); // "s" registers for samplers
+
 // Struct representing the data we expect to receive from earlier pipeline stages
 // - Should match the output of our corresponding vertex shader
 // - The name of the struct itself is unimportant
@@ -20,6 +26,8 @@ cbuffer ExternalPixelData : register(b0)
 {
     float4 colourTint : TINT;
     float totalTime : TIME;
+    float2 scale : SCALE;
+    float2 offset : OFFSET;
 };
 
 // --------------------------------------------------------
@@ -37,5 +45,6 @@ float4 main(VertexToPixel input) : SV_TARGET
 	// - This color (like most values passing through the rasterizer) is 
 	//   interpolated for each pixel between the corresponding vertices 
 	//   of the triangle we're rendering
-    return colourTint;
+    input.uv = input.uv * scale + offset;
+    return colourTint * brick.Sample(BasicSampler, input.uv);
 }

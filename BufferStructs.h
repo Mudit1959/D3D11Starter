@@ -12,4 +12,6 @@ struct ExtraPixelData
 {
 	DirectX::XMFLOAT4 colourTint;
 	float totalTime;
+	DirectX::XMFLOAT2 scale;
+	DirectX::XMFLOAT2 offset;
 };

@@ -19,6 +19,8 @@ cbuffer ExternalPixelData : register(b0)
 {
     float4 colourTint : TINT;
     float totalTime : TIME;
+    float2 scale : SCALE;
+    float2 offset : OFFSET;
 };
 
 // --------------------------------------------------------

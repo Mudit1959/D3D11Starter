@@ -11,6 +11,7 @@ public:
 
 	//Getters
 	DirectX::XMFLOAT4X4 GetProj(), GetView();
+	DirectX::XMFLOAT3 GetPos();
 
 	void Update(float dt);
 

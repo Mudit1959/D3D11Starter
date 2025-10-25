@@ -23,7 +23,7 @@ public:
 	void Draw(float deltaTime, float totalTime);
 	void Initialize();
 	void OnResize();
-	void SetExternalData(float totalTime, DirectX::XMFLOAT4 tint, DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e);
+	void SetExternalData(float totalTime, DirectX::XMFLOAT4 tint, DirectX::XMFLOAT2 scale, DirectX::XMFLOAT2 offset, DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e);
 
 private:
 

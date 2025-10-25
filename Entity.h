@@ -12,6 +12,8 @@ public:
 	void Draw();
 	int GetMeshIndexCount();
 	DirectX::XMFLOAT4 GetTint();
+	DirectX::XMFLOAT2 GetScale();
+	DirectX::XMFLOAT2 GetOffset();
 
 private:
 	std::shared_ptr<Mesh> mesh;

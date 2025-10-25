@@ -55,3 +55,5 @@ void Camera::Update(float dt)
 
 	UpdateViewMatrix();
 }
+
+DirectX::XMFLOAT3 Camera::GetPos() { return transform.GetPosition(); }
