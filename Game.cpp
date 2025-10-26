@@ -23,7 +23,7 @@
 // For the DirectX Math library
 using namespace DirectX;
 
-std::vector<float> tints;
+std::vector<float> tintScaleOffset;
 
 std::vector<Entity> entityList;
 std::vector<Microsoft::WRL::ComPtr<ID3D11VertexShader>> vertexShaders;
@@ -149,11 +149,21 @@ void Game::RefreshUI()
 
 	if (ImGui::TreeNode("Materials"))
 	{
-		float max = 5.0f; float min = -5.0f;
+		float max = 5.0f; float min = 0.0f;
 
-		if (ImGui::TreeNode("Two Textures Material"))
+		for (int i = 0; i < materials.size(); i++) 
 		{
-			ImGui::TreePop();
+			ImGui::PushID(i);
+			if (ImGui::TreeNode("Material"))
+			{
+				ImGui::ColorEdit4("Tint Editor", &tintScaleOffset[i*8]);
+				ImGui::DragFloat("Scale X", &tintScaleOffset[i*8 + 4], 0.005f, 1.0f, 5.0f, "%.3f", ImGuiSliderFlags_None);
+				ImGui::DragFloat("Scale Y", &tintScaleOffset[i*8 + 5], 0.005f, 1.0f, 5.0f, "%.3f", ImGuiSliderFlags_None);
+				ImGui::DragFloat("Offset X", &tintScaleOffset[i * 8 + 6], 0.005f, 0.0f, 5.0f, "%.3f", ImGuiSliderFlags_None);
+				ImGui::DragFloat("Offset Y", &tintScaleOffset[i * 8 + 7], 0.005f, 0.0f, 5.0f, "%.3f", ImGuiSliderFlags_None);
+				ImGui::TreePop(); 
+			}
+			ImGui::PopID();
 		}
 
 		ImGui::TreePop();
@@ -353,14 +363,14 @@ void Game::CreateGeometry()
 			DirectX::XMFLOAT4 t = materials[i]->GetTint();
 			DirectX::XMFLOAT2 s = materials[i]->GetScale();
 			DirectX::XMFLOAT2 o = materials[i]->GetOffset();
-			tints.push_back(t.x);
-			tints.push_back(t.y);
-			tints.push_back(t.z);
-			tints.push_back(t.w);
-			tints.push_back(s.x);
-			tints.push_back(s.y);
-			tints.push_back(o.x);
-			tints.push_back(o.y);
+			tintScaleOffset.push_back(t.x);
+			tintScaleOffset.push_back(t.y);
+			tintScaleOffset.push_back(t.z);
+			tintScaleOffset.push_back(t.w);
+			tintScaleOffset.push_back(s.x);
+			tintScaleOffset.push_back(s.y);
+			tintScaleOffset.push_back(o.x);
+			tintScaleOffset.push_back(o.y);
 		} 
 
 	}
@@ -483,6 +493,17 @@ void Game::Draw(float deltaTime, float totalTime)
 		for (int i = 0; i < materials.size(); i++) 
 		{
 			materials[i]->BindTexturesSamplers();
+		}
+	}
+
+	// -- UPDATE TINT, SCALE, OFFSET --
+	{
+		for (int i = 0; i < materials.size(); i++) 
+		{
+			materials[i]->SetTint(DirectX::XMFLOAT4(&tintScaleOffset[i * 8]));
+			materials[i]->SetScale(DirectX::XMFLOAT2(&tintScaleOffset[i*8 + 4]));
+			materials[i]->SetOffset(DirectX::XMFLOAT2(&tintScaleOffset[i*8 + 6]));
+
 		}
 	}
 
