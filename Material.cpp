@@ -32,6 +32,11 @@ void Material::AddSampler(unsigned int index, Microsoft::WRL::ComPtr<ID3D11Sampl
 
 Microsoft::WRL::ComPtr<ID3D11VertexShader> Material::GetVS() { return vertexShader; }
 Microsoft::WRL::ComPtr<ID3D11PixelShader> Material::GetPS() { return pixelShader; }
+int Material::GetTextureSRVCount() { return textureSRVCount; }
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Material::GetTextureSRV(int s) 
+{
+	return textureSRVs[s];
+}
 DirectX::XMFLOAT4 Material::GetTint() { return tint; }
 DirectX::XMFLOAT2 Material::GetScale() { return scale; }
 DirectX::XMFLOAT2 Material::GetOffset() { return offset; }

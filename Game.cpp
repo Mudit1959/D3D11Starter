@@ -161,6 +161,10 @@ void Game::RefreshUI()
 				ImGui::DragFloat("Scale Y", &tintScaleOffset[i*8 + 5], 0.005f, 1.0f, 5.0f, "%.3f", ImGuiSliderFlags_None);
 				ImGui::DragFloat("Offset X", &tintScaleOffset[i * 8 + 6], 0.005f, 0.0f, 5.0f, "%.3f", ImGuiSliderFlags_None);
 				ImGui::DragFloat("Offset Y", &tintScaleOffset[i * 8 + 7], 0.005f, 0.0f, 5.0f, "%.3f", ImGuiSliderFlags_None);
+				for (int j = 0; j < materials[i]->GetTextureSRVCount(); j++) 
+				{
+					ImGui::Image((void*)materials[i]->GetTextureSRV(j).Get(), ImVec2(50, 50));
+				}
 				ImGui::TreePop(); 
 			}
 			ImGui::PopID();

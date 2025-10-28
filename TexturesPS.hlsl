@@ -46,5 +46,5 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//   interpolated for each pixel between the corresponding vertices 
 	//   of the triangle we're rendering
     //input.uv = input.uv * scale + offset;
-    return crosswalk.Sample(BasicSampler, input.uv) * rock.Sample(BasicSampler, input.uv);
+    return colourTint * crosswalk.Sample(BasicSampler, input.uv) * rock.Sample(BasicSampler, input.uv);
 }
