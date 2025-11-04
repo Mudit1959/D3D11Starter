@@ -46,6 +46,7 @@ Game::Game()
 	Initialize(); //Initialize ImGui
 	camera = std::make_shared<Camera>(10.0f, 0.0f, -30.0f, Window::AspectRatio());
 	secondCamera = std::make_shared<Camera>(0.0f, 0.0f, -10.0f, Window::AspectRatio());
+	
 	// Set initial graphics API state
 	//  - These settings persist until we change them
 	//  - Some of these, like the primitive topology & input layout, probably won't change
@@ -346,16 +347,16 @@ void Game::CreateGeometry()
 
 		// Use the different shaders to create different materials
 
-		materials.push_back(std::make_shared<Material>(white, vertexShaders[0], pixelShaders[0])); // 0 - white
-		materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0.676f, 0.43f, 0.43f, 1.0f), vertexShaders[0], pixelShaders[0])); // 1 - dull orange
-		materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0.013f, 0.392f, 0.125f, 1.0f), vertexShaders[0], pixelShaders[0])); // 2 - green
-		materials.push_back(std::make_shared<Material>(red, vertexShaders[0], pixelShaders[0])); // 3 - red
-		materials.push_back(std::make_shared<Material>(blue, vertexShaders[0], pixelShaders[0])); // 4 - blue
-		materials.push_back(std::make_shared<Material>(black, vertexShaders[0], pixelShaders[0])); // 5 - black
-		materials.push_back(std::make_shared<Material>(white, vertexShaders[0], pixelShaders[4])); // 6 - Combining textures material
-		materials.push_back(std::make_shared<Material>(white, vertexShaders[0], pixelShaders[1])); // 7 - UV material
-		materials.push_back(std::make_shared<Material>(white, vertexShaders[0], pixelShaders[2])); // 8 - Normals material
-		materials.push_back(std::make_shared<Material>(white, vertexShaders[0], pixelShaders[3])); // 9 - Custom material
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[0])); // 0 - white
+		materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0.676f, 0.43f, 0.43f, 1.0f), 0.5f, vertexShaders[0], pixelShaders[0])); // 1 - dull orange
+		materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0.013f, 0.392f, 0.125f, 1.0f), 0.5f, vertexShaders[0], pixelShaders[0])); // 2 - green
+		materials.push_back(std::make_shared<Material>(red, 0.5f, vertexShaders[0], pixelShaders[0])); // 3 - red
+		materials.push_back(std::make_shared<Material>(blue, 0.5f, vertexShaders[0], pixelShaders[0])); // 4 - blue
+		materials.push_back(std::make_shared<Material>(black, 0.5f, vertexShaders[0], pixelShaders[0])); // 5 - black
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[4])); // 6 - Combining textures material
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[1])); // 7 - UV material
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[2])); // 8 - Normals material
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[3])); // 9 - Custom material
 
 		// -- IMGUI EDITING --
 		for (int i = 0; i < 10; i++) // cross-check with number of materials
@@ -521,8 +522,14 @@ void Game::Draw(float deltaTime, float totalTime)
 		
 		for (int i = 0; i < 5; i++)
 		{
-			if (cameraChoice == 0) { SetExternalData(totalTime, entityList[i].GetTint(), entityList[i].GetScale(), entityList[i].GetOffset(), camera->GetView(), camera->GetProj(), entityList[i]); }
-			else { SetExternalData(totalTime, entityList[i].GetTint(), entityList[i].GetScale(), entityList[i].GetOffset(), secondCamera->GetView(), secondCamera->GetProj(), entityList[i]); }
+			if (cameraChoice == 0)
+			{
+				SetExternalData(totalTime, entityList[i].GetTint(), entityList[i].GetRoughness(), camera->GetPos(), entityList[i].GetScale(), entityList[i].GetOffset(), camera->GetView(), camera->GetProj(), entityList[i]);
+			}
+			else 
+			{ 
+				SetExternalData(totalTime, entityList[i].GetTint(), entityList[i].GetRoughness(), secondCamera->GetPos(), entityList[i].GetScale(), entityList[i].GetOffset(), secondCamera->GetView(), secondCamera->GetProj(), entityList[i]);
+			}
 			entityList[i].Draw();
 		}
 	}
@@ -547,7 +554,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 }
 
-void Game::SetExternalData(float totalTime, DirectX::XMFLOAT4 tint , DirectX:: XMFLOAT2 scale, DirectX::XMFLOAT2 offset, DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e)
+void Game::SetExternalData(float totalTime, DirectX::XMFLOAT4 tint , float roughness, DirectX::XMFLOAT3 worldPos, DirectX:: XMFLOAT2 scale, DirectX::XMFLOAT2 offset, DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e)
 {
 	ExtraVertexData vsData;
 	vsData.world = e.GetTransform()->GetWorldMatrix();
@@ -560,6 +567,9 @@ void Game::SetExternalData(float totalTime, DirectX::XMFLOAT4 tint , DirectX:: X
 	psData.totalTime = totalTime;
 	psData.scale = scale;
 	psData.offset = offset;
+	psData.roughness = roughness;
+	psData.worldPos = worldPos; 
+	psData.ambient = DirectX::XMFLOAT3();
 	D3D11_MAPPED_SUBRESOURCE pixelMappedBuffer = {};
 
 	Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(vsData), D3D11_VERTEX_SHADER, 0);

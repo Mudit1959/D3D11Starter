@@ -7,9 +7,12 @@
 /// <param name="t"> - 4 component tint</param>
 /// <param name="vs"> - C++ vertex shader object pointer</param>
 /// <param name="ps"> - C++ pixel shader object pointer</param>
-Material::Material(DirectX::XMFLOAT4 t, Microsoft::WRL::ComPtr<ID3D11VertexShader> vs, Microsoft::WRL::ComPtr<ID3D11PixelShader> ps) 
+Material::Material(DirectX::XMFLOAT4 t, float r, Microsoft::WRL::ComPtr<ID3D11VertexShader> vs, Microsoft::WRL::ComPtr<ID3D11PixelShader> ps) 
 {
 	tint = t;
+	roughness = r;
+	if (r < 0.0f) { roughness = 0; }
+	if (r > 1.0f) { roughness = 1; }
 	scale = DirectX::XMFLOAT2(1, 1);
 	offset = DirectX::XMFLOAT2(0, 0);
 	vertexShader = vs;
@@ -35,6 +38,7 @@ Microsoft::WRL::ComPtr<ID3D11PixelShader> Material::GetPS() { return pixelShader
 DirectX::XMFLOAT4 Material::GetTint() { return tint; }
 DirectX::XMFLOAT2 Material::GetScale() { return scale; }
 DirectX::XMFLOAT2 Material::GetOffset() { return offset; }
+float Material::GetRoughness() { return roughness; }
 
 void Material::SetTint(DirectX::XMFLOAT4 t) { tint = t; }
 void Material::SetVS(Microsoft::WRL::ComPtr<ID3D11VertexShader> vs) { vertexShader = vs; }
