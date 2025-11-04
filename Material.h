@@ -13,6 +13,7 @@ private:
 	DirectX::XMFLOAT4 tint;
 	DirectX::XMFLOAT2 scale;
 	DirectX::XMFLOAT2 offset;
+	float roughness;
 
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
@@ -23,7 +24,7 @@ private:
 	unsigned int textureSRVCount, samplerCount;
 
 public:
-	Material(DirectX::XMFLOAT4 t, Microsoft::WRL::ComPtr<ID3D11VertexShader> vs, Microsoft::WRL::ComPtr<ID3D11PixelShader> ps); // pointer to first index of tint
+	Material(DirectX::XMFLOAT4 t, float roughness, Microsoft::WRL::ComPtr<ID3D11VertexShader> vs, Microsoft::WRL::ComPtr<ID3D11PixelShader> ps); // pointer to first index of tint
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> GetVS();
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> GetPS();
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetTextureSRV(int s);
@@ -31,6 +32,7 @@ public:
 	DirectX::XMFLOAT4 GetTint();
 	DirectX::XMFLOAT2 GetScale();
 	DirectX::XMFLOAT2 GetOffset();
+	float GetRoughness();
 	void SetTint(DirectX::XMFLOAT4 t);
 	void SetScale(DirectX::XMFLOAT2 s);
 	void SetOffset(DirectX::XMFLOAT2 o);

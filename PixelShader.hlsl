@@ -1,3 +1,4 @@
+#include "ShaderInclude.hlsli"
 
 Texture2D brick : register(t0); // "t" registers for textures
 Texture2D concrete : register(t1); // "t" registers for textures
@@ -5,30 +6,6 @@ Texture2D crosswalk : register(t2); // "t" registers for textures
 Texture2D rock : register(t3); // "t" registers for textures
 SamplerState BasicSampler : register(s0); // "s" registers for samplers
 
-// Struct representing the data we expect to receive from earlier pipeline stages
-// - Should match the output of our corresponding vertex shader
-// - The name of the struct itself is unimportant
-// - The variable names don't have to match other shaders (just the semantics)
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float4 screenPosition	: SV_POSITION;
-    float2 uv : TEXCOORD;
-    float3 normal : NORMAL;
-};
-
-cbuffer ExternalPixelData : register(b0)
-{
-    float4 colourTint : TINT;
-    float totalTime : TIME;
-    float2 scale : SCALE;
-    float2 offset : OFFSET;
-};
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader

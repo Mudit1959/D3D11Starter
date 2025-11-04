@@ -14,6 +14,7 @@ public:
 	DirectX::XMFLOAT4 GetTint();
 	DirectX::XMFLOAT2 GetScale();
 	DirectX::XMFLOAT2 GetOffset();
+	float GetRoughness();
 
 private:
 	std::shared_ptr<Mesh> mesh;
