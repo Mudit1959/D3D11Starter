@@ -22,6 +22,18 @@ float4 main(VertexToPixel input) : SV_TARGET
 	// - This color (like most values passing through the rasterizer) is 
 	//   interpolated for each pixel between the corresponding vertices 
 	//   of the triangle we're rendering
+    input.normal = normalize(input.normal); // Renormalize incoming normals that have been translated into world space, and INTERPOLATED
     input.uv = input.uv * scale + offset;
-    return colourTint * brick.Sample(BasicSampler, input.uv);
+
+    if (light.Type == LIGHT_TYPE_DIRECTIONAL_MATTE)
+    {
+        return float4(ambientColor + diffuseTerm(light.Color, light.Intensity, crosswalk.Sample(BasicSampler, input.uv).xyz, input.normal, light.Direction), 1.0f);
+    }
+        
+    
+    else if (light.Type == LIGHT_TYPE_DIRECTIONAL_SPECULAR)
+    {
+        return float4(1.0f, 1.0f, 1.0f, 1.0f);
+    }
+    return float4(1.0f, 1.0f, 1.0f, 1.0f);
 }

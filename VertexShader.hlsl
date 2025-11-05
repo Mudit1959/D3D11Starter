@@ -4,6 +4,7 @@
 cbuffer ExternalVertexData : register(b0)
 {
     float4x4 world			: WORLDMATRIX;
+    float4x4 worldInv		: WORLD_INVERSE_MATRIX;
     float4x4 view			: VIEWMATRIX;
     float4x4 proj			: PROJECTIONMATRIX;
 };
@@ -30,7 +31,8 @@ VertexToPixel main( VertexShaderInput input )
 	//   a perspective projection matrix, which we'll get to in the future).
     float4x4 wvp = mul(proj, mul(view, world));
     output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
-    output.normal = input.normal;
+    output.normal = mul((float3x3)worldInv, input.normal);
+    output.worldPos = mul(world, float4(input.localPosition, 1.0f)).xyz;
     output.uv = input.uv;
 
 	// Pass the color through 

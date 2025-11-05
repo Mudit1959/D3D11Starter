@@ -7,6 +7,7 @@
 #include "Transform.h"
 #include "Entity.h"
 #include "Camera.h"
+#include "Light.h"
 
 
 class Game
@@ -40,7 +41,7 @@ private:
 
 	bool showDemo;
 	float color[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
-	
+	Light light;
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the

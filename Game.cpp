@@ -92,6 +92,12 @@ void Game::Initialize()
 	//ImGui::StyleColorsLight();
 	//ImGui::StyleColorsClassic();
 	Game::showDemo = false;
+	light = {};
+	light.Type = LIGHT_TYPE_DIRECTIONAL_MATTE;
+	light.Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+	light.Color = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+	light.Intensity = 1.0f;
+	
 }
 
 /// <summary
@@ -562,6 +568,7 @@ void Game::SetExternalData(float totalTime, DirectX::XMFLOAT4 tint , float rough
 {
 	ExtraVertexData vsData;
 	vsData.world = e.GetTransform()->GetWorldMatrix();
+	vsData.worldInv = e.GetTransform()->GetWorldInverseTransposeMatrix();
 	vsData.view = view;
 	vsData.proj = proj;
 	D3D11_MAPPED_SUBRESOURCE vertexMappedBuffer = {};
@@ -573,7 +580,8 @@ void Game::SetExternalData(float totalTime, DirectX::XMFLOAT4 tint , float rough
 	psData.offset = offset;
 	psData.roughness = roughness;
 	psData.worldPos = worldPos; 
-	psData.ambient = DirectX::XMFLOAT3();
+	psData.ambientColor = DirectX::XMFLOAT3(0.1f, 0.1f, 0.25f);
+	memcpy(&psData.dirLight, &light, sizeof(Light));
 	D3D11_MAPPED_SUBRESOURCE pixelMappedBuffer = {};
 
 	Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(vsData), D3D11_VERTEX_SHADER, 0);

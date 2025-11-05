@@ -4,6 +4,7 @@
 struct ExtraVertexData 
 {
 	DirectX::XMFLOAT4X4 world;
+	DirectX::XMFLOAT4X4 worldInv;
 	DirectX::XMFLOAT4X4 view;
 	DirectX::XMFLOAT4X4 proj;
 };
@@ -19,5 +20,7 @@ struct ExtraPixelData
 	float totalTime;
 
 	float roughness;
-	DirectX::XMFLOAT3 ambient; 
+	DirectX::XMFLOAT3 ambientColor; 
+
+	Light dirLight;
 };
