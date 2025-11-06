@@ -40,8 +40,7 @@ private:
 	std::shared_ptr<Mesh> cubeMesh, sphereMesh, cylinderMesh, quadMesh, quadDoubleMesh, helixMesh, torusMesh;
 
 	bool showDemo;
-	float color[4] = { 0.4f, 0.6f, 0.75f, 1.0f };
-	Light light;
+	Light lights[5];
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the

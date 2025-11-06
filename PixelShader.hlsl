@@ -24,16 +24,34 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//   of the triangle we're rendering
     input.normal = normalize(input.normal); // Renormalize incoming normals that have been translated into world space, and INTERPOLATED
     input.uv = input.uv * scale + offset;
-
-    if (light.Type == LIGHT_TYPE_DIRECTIONAL_MATTE)
-    {
-        return float4(ambientColor + diffuseTerm(light.Color, light.Intensity, crosswalk.Sample(BasicSampler, input.uv).xyz, input.normal, light.Direction), 1.0f);
-    }
-        
     
-    else if (light.Type == LIGHT_TYPE_DIRECTIONAL_SPECULAR)
+    float3 diffuse, specular;
+    float3 total = (0.0f, 0.0f, 0.0f);
+    total += ambientColor;
+
+    for (int i = 0; i < 5; i++)
     {
-        return float4(1.0f, 1.0f, 1.0f, 1.0f);
+        diffuse = diffuseTerm(lights[i].Color, lights[i].Intensity, crosswalk.Sample(BasicSampler, input.uv).xyz, input.normal, lights[i].Direction);
+        switch (lights[i].Type)
+        {
+            case LIGHT_TYPE_DIRECTIONAL_MATTE:
+                total += diffuse;
+                break;
+        
+            case LIGHT_TYPE_DIRECTIONAL_SPECULAR:
+                specular = specularTerm(camWorldPos, input.worldPos, lights[i].Direction,  lights[i].Intensity, input.normal, roughness);
+                total += (specular + diffuse);
+                break;
+        
+            case LIGHT_TYPE_POINT:
+                total += PointLight(input, crosswalk.Sample(BasicSampler, input.uv).xyz, lights[i]);
+                break;
+            
+            case LIGHT_TYPE_SPOT:
+                total += SpotLight(input, crosswalk.Sample(BasicSampler, input.uv).xyz, lights[i]);
+                break;
+        }
     }
-    return float4(1.0f, 1.0f, 1.0f, 1.0f);
+    
+    return float4(total, 1.0f);
 }

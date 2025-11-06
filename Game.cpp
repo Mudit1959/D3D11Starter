@@ -25,6 +25,8 @@ using namespace DirectX;
 
 std::vector<float> tintScaleOffset;
 
+std::vector<float> lightsColorIntensity;
+
 std::vector<Entity> entityList;
 std::vector<Microsoft::WRL::ComPtr<ID3D11VertexShader>> vertexShaders;
 std::vector<Microsoft::WRL::ComPtr<ID3D11PixelShader>> pixelShaders;
@@ -92,11 +94,9 @@ void Game::Initialize()
 	//ImGui::StyleColorsLight();
 	//ImGui::StyleColorsClassic();
 	Game::showDemo = false;
-	light = {};
-	light.Type = LIGHT_TYPE_DIRECTIONAL_MATTE;
-	light.Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
-	light.Color = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
-	light.Intensity = 1.0f;
+
+	
+	
 	
 }
 
@@ -134,7 +134,7 @@ void Game::RefreshUI()
 
 		ImGui::Text("Window Client Size: %ix%i", Window::Width(), Window::Height());
 
-		ImGui::ColorEdit4("RGBA color editor", color);
+		ImGui::ColorEdit4("RGBA color editor", &lightsColorIntensity[5*4+4]);
 
 		// Feature 2 - Drag and change
 		const float drag_speed = 0.4f;
@@ -156,7 +156,6 @@ void Game::RefreshUI()
 
 	if (ImGui::TreeNode("Materials"))
 	{
-		float max = 5.0f; float min = 0.0f;
 
 		for (int i = 0; i < materials.size(); i++) 
 		{
@@ -173,6 +172,35 @@ void Game::RefreshUI()
 					ImGui::Image((void*)materials[i]->GetTextureSRV(j).Get(), ImVec2(50, 50));
 				}
 				ImGui::TreePop(); 
+			}
+			ImGui::PopID();
+		}
+
+		ImGui::TreePop();
+	}
+
+	if (ImGui::TreeNode("Lights"))
+	{
+		
+		if (ImGui::TreeNode("Ambient")) 
+		{
+			ImGui::ColorEdit3("Tint Editor", &lightsColorIntensity[5*4]);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Background"))
+		{
+			ImGui::ColorEdit4("Tint Editor", &lightsColorIntensity[5 * 4 + 3]);
+			ImGui::TreePop();
+		}
+		
+		for (int i = 0; i < 5; i++)
+		{
+			ImGui::PushID(i);
+			if (ImGui::TreeNode("Light"))
+			{
+				ImGui::ColorEdit3("Tint Editor", &lightsColorIntensity[i * 4]);
+				ImGui::DragFloat("Scale Intensity", &lightsColorIntensity[i * 4 + 3], 0.001f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+				ImGui::TreePop();
 			}
 			ImGui::PopID();
 		}
@@ -384,6 +412,63 @@ void Game::CreateGeometry()
 			tintScaleOffset.push_back(o.y);
 		} 
 
+		for (int i = 0; i < 5; i++) //cross-check with number of lights
+		{
+			lightsColorIntensity.push_back(1.0f);
+			lightsColorIntensity.push_back(1.0f);
+			lightsColorIntensity.push_back(1.0f);
+			lightsColorIntensity.push_back(1.0f);
+		}
+		lightsColorIntensity.push_back(0.1f);
+		lightsColorIntensity.push_back(0.1f);
+		lightsColorIntensity.push_back(0.25f);
+		lightsColorIntensity.push_back(0.4f);
+		lightsColorIntensity.push_back(0.6f);
+		lightsColorIntensity.push_back(0.75f);
+		lightsColorIntensity.push_back(1.0f);
+
+	}
+
+	// -- CREATING LIGHTS --
+	{
+		lights[0] = {};
+		lights[0].Type = 0;
+		lights[0].Position = DirectX::XMFLOAT3(-5.0f, 2.0f, 0.0f);
+		lights[0].Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+
+
+		lights[1] = {};
+		lights[1].Type = 1;
+		lights[1].Position = DirectX::XMFLOAT3(-5.0f, 2.0f, 0.0f);
+		lights[1].Direction = DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f);
+
+
+		lights[2] = {};
+		lights[2].Type = 0;
+		lights[2].Position = DirectX::XMFLOAT3(-5.0f, 2.0f, 0.0f);
+		lights[2].Direction = DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f);
+
+
+		lights[3] = {};
+		lights[3].Type = 2;
+		lights[3].Position = DirectX::XMFLOAT3(8.0f, -4.0f, -5.0f);
+		lights[3].Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+		lights[3].Range = 10.0f;
+		lights[3].Color = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+
+		lights[4] = {};
+		lights[4].Type = 3;
+		lights[4].Position = DirectX::XMFLOAT3(8.0f, -10.0f, -0.7f);
+		lights[4].Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+		lights[4].Range = 15.0f;
+		lights[4].SpotInnerAngle = XM_PI / 9;
+		lights[4].SpotOuterAngle = (XM_PI / 9) * 2.25f;
+
+		for (int i = 0; i < 5; i++)
+		{
+			lights[i].Color = DirectX::XMFLOAT3(lightsColorIntensity[i*4], lightsColorIntensity[i*4 + 1], lightsColorIntensity[i*4 + 2]);
+			lights[i].Intensity = lightsColorIntensity[i*4 + 3];
+		}
 	}
 
 	// -- ATTACH TEXTURES TO MATERIALS -- 
@@ -438,11 +523,11 @@ void Game::CreateGeometry()
 
 	// Now to create entities using the meshes
 
-	entityList.push_back(Entity(cubeMesh, materials[6]));
+	entityList.push_back(Entity(cubeMesh, materials[1]));
 	entityList.push_back(Entity(cylinderMesh, materials[1]));
-	entityList.push_back(Entity(helixMesh, materials[8]));
-	entityList.push_back(Entity(sphereMesh, materials[7]));
-	entityList.push_back(Entity(torusMesh, materials[3]));
+	entityList.push_back(Entity(helixMesh, materials[1]));
+	entityList.push_back(Entity(sphereMesh, materials[1]));
+	entityList.push_back(Entity(torusMesh, materials[1]));
 
 	for (unsigned int i = 0; i < 5; i++) 
 	{
@@ -491,7 +576,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - At the beginning of Game::Draw() before drawing *anything*
 	{
 		// Clear the back buffer (erase what's on screen) and depth buffer
-		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	Game::color);
+		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	&lightsColorIntensity[5*4+3]);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 		// Bind the constant buffer
@@ -514,7 +599,12 @@ void Game::Draw(float deltaTime, float totalTime)
 			materials[i]->SetTint(DirectX::XMFLOAT4(&tintScaleOffset[i * 8]));
 			materials[i]->SetScale(DirectX::XMFLOAT2(&tintScaleOffset[i*8 + 4]));
 			materials[i]->SetOffset(DirectX::XMFLOAT2(&tintScaleOffset[i*8 + 6]));
+		}
 
+		for (int i = 0; i < 5; i++) 
+		{
+			lights[i].Color = DirectX::XMFLOAT3(lightsColorIntensity[i*4], lightsColorIntensity[i*4 + 1], lightsColorIntensity[i*4 + 2]);
+			lights[i].Intensity = lightsColorIntensity[i*4 + 3];
 		}
 	}
 
@@ -580,8 +670,8 @@ void Game::SetExternalData(float totalTime, DirectX::XMFLOAT4 tint , float rough
 	psData.offset = offset;
 	psData.roughness = roughness;
 	psData.worldPos = worldPos; 
-	psData.ambientColor = DirectX::XMFLOAT3(0.1f, 0.1f, 0.25f);
-	memcpy(&psData.dirLight, &light, sizeof(Light));
+	psData.ambientColor = DirectX::XMFLOAT3(&lightsColorIntensity[5*4]);
+	memcpy(&psData.lights, &lights[0], sizeof(Light) * 5);
 	D3D11_MAPPED_SUBRESOURCE pixelMappedBuffer = {};
 
 	Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(vsData), D3D11_VERTEX_SHADER, 0);

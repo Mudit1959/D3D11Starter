@@ -22,5 +22,5 @@ struct ExtraPixelData
 	float roughness;
 	DirectX::XMFLOAT3 ambientColor; 
 
-	Light dirLight;
+	Light lights[5]; // Array of exactly 5 lights
 };
