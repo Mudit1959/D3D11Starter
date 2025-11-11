@@ -286,7 +286,7 @@ void Game::LoadVertexShader(std::wstring path)
 	//  - Doing this NOW because it requires a vertex shader's byte code to verify against!
 	//  - Luckily, we already have that loaded (the vertex shader blob above)
 		{
-			D3D11_INPUT_ELEMENT_DESC inputElements[3] = {};
+			D3D11_INPUT_ELEMENT_DESC inputElements[4] = {};
 
 			// Set up the first element - a position, which is 3 float values
 			inputElements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;				// Most formats are described as color channels; really it just means "Three 32-bit floats"
@@ -303,10 +303,15 @@ void Game::LoadVertexShader(std::wstring path)
 			inputElements[2].SemanticName = "NORMAL";							// Match our vertex shader input!
 			inputElements[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// After the previous element
 
+			// Set up the fourth element - the tangent for normal mapping - 3 more floats
+			inputElements[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+			inputElements[3].SemanticName = "TANGENT";							// Match our vertex shader input!
+			inputElements[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+
 			// Create the input layout, verifying our description against actual shader code
 			Graphics::Device->CreateInputLayout(
 				inputElements,							// An array of descriptions
-				3,										// How many elements in that array?
+				4,										// How many elements in that array?
 				vertexShaderBlob->GetBufferPointer(),	// Pointer to the code of a shader that uses this layout
 				vertexShaderBlob->GetBufferSize(),		// Size of the shader code that uses this layout
 				vertexInputLayout.GetAddressOf());		// Address of the resulting ID3D11InputLayout pointer
@@ -350,10 +355,10 @@ void Game::CreateGeometry()
 	{
 		
 
-		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/DiffuseTextures/amal_k_brick.png").c_str(), nullptr, brick.GetAddressOf());
-		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/DiffuseTextures/charloette_b_concrete.png").c_str(), nullptr, concrete.GetAddressOf());
-		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/DiffuseTextures/charloette_b_crosswalk.png").c_str(), nullptr, crosswalk.GetAddressOf());
-		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/DiffuseTextures/rocks22.png").c_str(), nullptr, rocks.GetAddressOf());
+		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/amal_k_brick.png").c_str(), nullptr, brick.GetAddressOf());
+		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/charloette_b_concrete.png").c_str(), nullptr, concrete.GetAddressOf());
+		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/charloette_b_crosswalk.png").c_str(), nullptr, crosswalk.GetAddressOf());
+		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/rocks22.png").c_str(), nullptr, rocks.GetAddressOf());
 
 		// Once the textures have been loaded, create a sampler state(ID3D11SamplerState) and its description (ID3D11SamplerStateDesc)
 

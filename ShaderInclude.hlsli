@@ -14,6 +14,7 @@ struct VertexShaderInput
     float3 localPosition : POSITION; // XYZ position
     float2 uv : TEXCOORD; // UV Coordinates
     float3 normal : NORMAL; // NORMAL
+    float3 tangent: TANGENT; // TANGENT FOR NORMAL MAPPING
 };
 
 // Struct representing the data we expect to receive from earlier pipeline stages
