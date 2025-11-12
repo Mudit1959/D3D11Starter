@@ -199,7 +199,7 @@ void Game::RefreshUI()
 			if (ImGui::TreeNode("Light"))
 			{
 				ImGui::ColorEdit3("Tint Editor", &lightsColorIntensity[i * 4]);
-				ImGui::DragFloat("Scale Intensity", &lightsColorIntensity[i * 4 + 3], 0.001f, 0.0f, 10.0f, "%.3f", ImGuiSliderFlags_None);
+				ImGui::DragFloat("Scale Intensity", &lightsColorIntensity[i * 4 + 3], 0.001f, 0.0f, 2.0f, "%.3f", ImGuiSliderFlags_None);
 				ImGui::TreePop();
 			}
 			ImGui::PopID();
@@ -427,12 +427,12 @@ void Game::CreateGeometry()
 			lightsColorIntensity.push_back(1.0f);
 			lightsColorIntensity.push_back(1.0f);
 			lightsColorIntensity.push_back(1.0f);
-			lightsColorIntensity.push_back(3.0f);
+			lightsColorIntensity.push_back(0.0f);
 		}
 		//Ambient Color
-		lightsColorIntensity.push_back(1.0f);
-		lightsColorIntensity.push_back(1.0f);
-		lightsColorIntensity.push_back(1.0f);
+		lightsColorIntensity.push_back(0.0f);
+		lightsColorIntensity.push_back(0.0f);
+		lightsColorIntensity.push_back(0.0f);
 
 		//Background
 		lightsColorIntensity.push_back(2/255.0f);
@@ -460,17 +460,16 @@ void Game::CreateGeometry()
 
 
 		lights[3] = {};
-		lights[3].Type = 2;
+		lights[3].Type = 3;
 		lights[3].Position = DirectX::XMFLOAT3(8.0f, -4.0f, -5.0f);
-		lights[3].Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+		lights[3].Direction = DirectX::XMFLOAT3(1.0f, -1.0f, 0.0f);
 		lights[3].Range = 10.0f;
-		lights[3].Color = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
 
 		lights[4] = {};
-		lights[4].Type = 3;
+		lights[4].Type = 5;
 		lights[4].Position = DirectX::XMFLOAT3(8.0f, -10.0f, -0.7f);
 		lights[4].Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
-		lights[4].Range = 15.0f;
+		lights[4].Range = 10.0f;
 		lights[4].SpotInnerAngle = XM_PI / 9;
 		lights[4].SpotOuterAngle = (XM_PI / 9) * 2.25f;
 

@@ -51,8 +51,10 @@ float random(float2 s)
 #define MAX_SPECULAR_EXPONENT 256.0f
 #define LIGHT_TYPE_DIRECTIONAL_MATTE 0
 #define LIGHT_TYPE_DIRECTIONAL_SPECULAR 1
-#define LIGHT_TYPE_POINT 2
-#define LIGHT_TYPE_SPOT 3
+#define LIGHT_TYPE_POINT_MATTE 2
+#define LIGHT_TYPE_POINT_SPECULAR 3
+#define LIGHT_TYPE_SPOT_MATTE 4
+#define LIGHT_TYPE_SPOT_SPECULAR 5
 
 struct Light
 {
@@ -74,7 +76,7 @@ struct Light
 // External Data passed at Pixel Shader level
 cbuffer ExternalPixelData : register(b0)
 {
-    float4 colourTint : TINT;
+    float4 colorTint : TINT;
     
     float2 scale : SCALE;
     float2 offset : OFFSET;
@@ -88,50 +90,57 @@ cbuffer ExternalPixelData : register(b0)
     Light lights[5];
 };
 
-float3 diffuseTerm(float3 lightColor, float lightIntensity, float3 surfaceColor, float3 surfaceNormal, float3 lightDir)
+// -- LIGHTING EQUATIONS --
+
+float3 DiffuseDirTerm(float3 surfaceNormal, float3 surfaceColor, Light light)
 {
-    return saturate(dot(surfaceNormal, -lightDir)) * lightColor * lightIntensity;
+    return saturate(dot(surfaceNormal, -light.Direction)) * surfaceColor * light.Color * light.Intensity;
 }
 
-float3 specularTerm(float3 cameraWorldPos, float3 pixelWorldPos, float3 surfaceColor, float3 lightColor, float3 lightDir, float lightIntensity, float3 normal, float r)
+// Specular requires V, L, N, and R
+// V - View Vector - Direction from surface to camera. Needs the world position of the camera(camWorldPos) and the surface world position (worldPos)
+// L - Light Direction Vector - The normalized direction of the light to the surface
+// N - Surface normal vector - must be normalized
+// R - The reflection of L along N
+float SpecularDirTerm(float3 surfaceWorldPos, float3 surfaceNormal, Light light)
 {
-    // V = normalize(cameraPosition - pixelWorldPosition)
-    // R = R = reflect(incomingLightDirection, normal)
-    float specExponent = (1.0f - r) * MAX_SPECULAR_EXPONENT;
-    // spec = pow( max(dot(R, V), 0.0f), specExponent )
+    float specExp = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
+    float3 V = normalize(camWorldPos - surfaceWorldPos);
+    float3 L = light.Direction;
+    float3 R = reflect(L, surfaceNormal);
+    return pow(saturate(dot(R, V)), specExp) * light.Intensity;
+
+}
+
+float DirectionalTerm(float3 surfaceWorldPos, Light light)
+{
+    return saturate(dot(surfaceWorldPos - light.Position, light.Direction));
+}
+
+float3 DiffusePointLight(float3 surfaceWorldPos, float3 surfaceNormal, float3 surfaceColor, Light light)
+{
+    return saturate(dot(surfaceNormal, normalize(light.Position - surfaceWorldPos))) * surfaceColor * light.Color * light.Intensity;
+}
+
+float3 DiffuseSpotLight(float3 surfaceWorldPos, float3 surfaceNormal, float3 surfaceColor, Light light)
+{
+    float dotIL = saturate(dot(surfaceWorldPos - light.Position, light.Direction));
+    float cosOuterAngle = cos(light.SpotOuterAngle);
+    float cosInnerAngle = cos(light.SpotInnerAngle);
+    float fallOff = cosOuterAngle - cosInnerAngle;
     
-    float d = dot(reflect(lightDir, normal), normalize(cameraWorldPos - pixelWorldPos));
-    return pow(d, specExponent) * lightIntensity * lightColor;
-
+    float spotTerm = saturate((cosOuterAngle - dotIL) / fallOff);
+    return spotTerm * DiffusePointLight(surfaceWorldPos, surfaceNormal, surfaceColor, light);
 }
 
-float Attenuate(Light light, float3 worldPos)
+float Attenuate(Light light, float3 surfaceWorldPos)
 {
-    float dist = distance(light.Position, worldPos);
+    float dist = distance(light.Position, surfaceWorldPos);
     float att = saturate(1.0f - (dist * dist / (light.Range * light.Range)));
     return att * att;
 }
 
-float3 PointLight(VertexToPixel input, float3 sample, float3 finalNormal, Light light)
-{
-    float3 pointDir = normalize(input.worldPos - light.Position);
-    float3 diffuse = diffuseTerm(light.Color, light.Intensity, sample, input.normal, pointDir);
-    float3 specular = specularTerm(camWorldPos, input.worldPos, sample, light.Color, pointDir, light.Intensity, input.normal, roughness);
-    
-    return (diffuse + specular) * (light.Intensity * Attenuate(light, input.worldPos));
-}
 
-float3 SpotLight(VertexToPixel input, float3 sample, float3 finalNormal, Light light)
-{
-    // Get cos(angle) between pixel and light direction
-    float pixelAngle = saturate(dot(input.worldPos - light.Position, light.Direction));
-                // Get cosines of angles and calculate range
-    float cosOuter = cos(light.SpotOuterAngle);
-    float cosInner = cos(light.SpotInnerAngle);
-    float falloffRange = cosOuter - cosInner;
-                // Linear falloff over the range, clamp 0-1, apply to light calc
-    float spotTerm = saturate((cosOuter - pixelAngle) / falloffRange);
-    return PointLight(input, sample, finalNormal, light) * spotTerm;
-}
+
 
 

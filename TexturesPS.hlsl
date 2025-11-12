@@ -20,5 +20,5 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//   interpolated for each pixel between the corresponding vertices 
 	//   of the triangle we're rendering
     //input.uv = input.uv * scale + offset;
-    return colourTint * material.Sample(BasicSampler, input.uv) * normalMap.Sample(BasicSampler, input.uv);
+    return colorTint * material.Sample(BasicSampler, input.uv) * normalMap.Sample(BasicSampler, input.uv);
 }
