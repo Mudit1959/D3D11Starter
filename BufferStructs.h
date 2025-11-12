@@ -24,4 +24,5 @@ struct ExtraPixelData
 	DirectX::XMFLOAT3 ambientColor; 
 
 	Light lights[5]; // Array of exactly 5 lights
+	
 };

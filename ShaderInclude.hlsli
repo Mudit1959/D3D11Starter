@@ -35,6 +35,8 @@ struct VertexToPixel
     float3 normal : NORMAL;
     
     float3 worldPos : POSITION;
+    
+    float3 tangent : TANGENT;
 };
 
 //Random value
@@ -88,17 +90,18 @@ cbuffer ExternalPixelData : register(b0)
 
 float3 diffuseTerm(float3 lightColor, float lightIntensity, float3 surfaceColor, float3 surfaceNormal, float3 lightDir)
 {
-    return saturate(dot(surfaceNormal, -lightDir)) * lightColor * lightIntensity * surfaceColor;
+    return saturate(dot(surfaceNormal, -lightDir)) * lightColor * lightIntensity;
 }
 
-float3 specularTerm(float3 cameraWorldPos, float3 pixelWorldPos, float3 lightDir, float lightIntensity, float3 normal, float roughness)
+float3 specularTerm(float3 cameraWorldPos, float3 pixelWorldPos, float3 surfaceColor, float3 lightColor, float3 lightDir, float lightIntensity, float3 normal, float r)
 {
     // V = normalize(cameraPosition - pixelWorldPosition)
     // R = R = reflect(incomingLightDirection, normal)
-    // specExponent = (1.0f – roughness) * MAX_SPECULAR_EXPONENT
+    float specExponent = (1.0f - r) * MAX_SPECULAR_EXPONENT;
     // spec = pow( max(dot(R, V), 0.0f), specExponent )
     
-    return pow(max(dot(reflect(lightDir, normal), normalize(cameraWorldPos - pixelWorldPos)), 0.0f), ((1.0f - roughness) * MAX_SPECULAR_EXPONENT)) * lightIntensity;
+    float d = dot(reflect(lightDir, normal), normalize(cameraWorldPos - pixelWorldPos));
+    return pow(d, specExponent) * lightIntensity * lightColor;
 
 }
 
@@ -109,16 +112,16 @@ float Attenuate(Light light, float3 worldPos)
     return att * att;
 }
 
-float3 PointLight(VertexToPixel input, float3 sample, Light light)
+float3 PointLight(VertexToPixel input, float3 sample, float3 finalNormal, Light light)
 {
     float3 pointDir = normalize(input.worldPos - light.Position);
     float3 diffuse = diffuseTerm(light.Color, light.Intensity, sample, input.normal, pointDir);
-    float3 specular = specularTerm(camWorldPos, input.worldPos, pointDir, light.Intensity, input.normal, roughness);
+    float3 specular = specularTerm(camWorldPos, input.worldPos, sample, light.Color, pointDir, light.Intensity, input.normal, roughness);
     
     return (diffuse + specular) * (light.Intensity * Attenuate(light, input.worldPos));
 }
 
-float3 SpotLight(VertexToPixel input, float3 sample, Light light)
+float3 SpotLight(VertexToPixel input, float3 sample, float3 finalNormal, Light light)
 {
     // Get cos(angle) between pixel and light direction
     float pixelAngle = saturate(dot(input.worldPos - light.Position, light.Direction));
@@ -128,7 +131,7 @@ float3 SpotLight(VertexToPixel input, float3 sample, Light light)
     float falloffRange = cosOuter - cosInner;
                 // Linear falloff over the range, clamp 0-1, apply to light calc
     float spotTerm = saturate((cosOuter - pixelAngle) / falloffRange);
-    return PointLight(input, sample, light) * spotTerm;
+    return PointLight(input, sample, finalNormal, light) * spotTerm;
 }
 
 

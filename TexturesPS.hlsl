@@ -1,9 +1,7 @@
 #include "ShaderInclude.hlsli"
 
-Texture2D brick : register(t0); // "t" registers for textures
-Texture2D concrete : register(t1); // "t" registers for textures
-Texture2D crosswalk : register(t2); // "t" registers for textures
-Texture2D rock : register(t3); // "t" registers for textures
+Texture2D material : register(t0); // "t" registers for textures
+Texture2D normalMap : register(t1); // "t" registers for textures
 SamplerState BasicSampler : register(s0); // "s" registers for samplers
 
 // --------------------------------------------------------
@@ -22,5 +20,5 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//   interpolated for each pixel between the corresponding vertices 
 	//   of the triangle we're rendering
     //input.uv = input.uv * scale + offset;
-    return colourTint * crosswalk.Sample(BasicSampler, input.uv) * rock.Sample(BasicSampler, input.uv);
+    return colourTint * material.Sample(BasicSampler, input.uv) * normalMap.Sample(BasicSampler, input.uv);
 }

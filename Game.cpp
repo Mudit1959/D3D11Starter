@@ -199,7 +199,7 @@ void Game::RefreshUI()
 			if (ImGui::TreeNode("Light"))
 			{
 				ImGui::ColorEdit3("Tint Editor", &lightsColorIntensity[i * 4]);
-				ImGui::DragFloat("Scale Intensity", &lightsColorIntensity[i * 4 + 3], 0.001f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+				ImGui::DragFloat("Scale Intensity", &lightsColorIntensity[i * 4 + 3], 0.001f, 0.0f, 10.0f, "%.3f", ImGuiSliderFlags_None);
 				ImGui::TreePop();
 			}
 			ImGui::PopID();
@@ -348,17 +348,23 @@ void Game::CreateGeometry()
 	XMFLOAT4 black = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brick, concrete, crosswalk, rocks;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brick, volcanic, crosswalk, rocks, brickNormal, volcanicNormal, crosswalkNormal, rocksNormal;
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
 
 	//  -- TEXTURES -- 
 	{
 		
-
+		// Load textures as SRVs
 		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/amal_k_brick.png").c_str(), nullptr, brick.GetAddressOf());
-		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/charloette_b_concrete.png").c_str(), nullptr, concrete.GetAddressOf());
+		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/charloette_b_volcanic_herringbone.png").c_str(), nullptr, volcanic.GetAddressOf());
 		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/charloette_b_crosswalk.png").c_str(), nullptr, crosswalk.GetAddressOf());
 		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/rocks22.png").c_str(), nullptr, rocks.GetAddressOf());
+
+		// Load Normal Maps as SRVs
+		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/amal_k_brick_normal.png").c_str(), nullptr, brickNormal.GetAddressOf());
+		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/charloette_b_volcanic_herringbone_normal.png").c_str(), nullptr, volcanicNormal.GetAddressOf());
+		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/charloette_b_crosswalk_normal.png").c_str(), nullptr, crosswalkNormal.GetAddressOf());
+		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/rocks22_normal.png").c_str(), nullptr, rocksNormal.GetAddressOf());
 
 		// Once the textures have been loaded, create a sampler state(ID3D11SamplerState) and its description (ID3D11SamplerStateDesc)
 
@@ -390,19 +396,18 @@ void Game::CreateGeometry()
 
 		// Use the different shaders to create different materials
 
-		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[0])); // 0 - white
-		materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0.676f, 0.43f, 0.43f, 1.0f), 0.5f, vertexShaders[0], pixelShaders[0])); // 1 - dull orange
-		materials.push_back(std::make_shared<Material>(DirectX::XMFLOAT4(0.013f, 0.392f, 0.125f, 1.0f), 0.5f, vertexShaders[0], pixelShaders[0])); // 2 - green
-		materials.push_back(std::make_shared<Material>(red, 0.5f, vertexShaders[0], pixelShaders[0])); // 3 - red
-		materials.push_back(std::make_shared<Material>(blue, 0.5f, vertexShaders[0], pixelShaders[0])); // 4 - blue
-		materials.push_back(std::make_shared<Material>(black, 0.5f, vertexShaders[0], pixelShaders[0])); // 5 - black
-		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[4])); // 6 - Combining textures material
-		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[1])); // 7 - UV material
-		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[2])); // 8 - Normals material
-		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[3])); // 9 - Custom material
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[4])); // 0 - Combining textures material - Does not work anymore
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[1])); // 1 - UV material
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[2])); // 2 - Meshes' normals material
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[3])); // 3 - Custom material
+
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[0])); // 4 - Brick
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[0])); // 5 - Volcanic
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[0])); // 6 - Crosswalk
+		materials.push_back(std::make_shared<Material>(white, 0.5f, vertexShaders[0], pixelShaders[0])); // 7 - Rocks
 
 		// -- IMGUI EDITING --
-		for (int i = 0; i < 10; i++) // cross-check with number of materials
+		for (int i = 0; i < 8; i++) // cross-check with number of materials
 		{ 
 			DirectX::XMFLOAT4 t = materials[i]->GetTint();
 			DirectX::XMFLOAT2 s = materials[i]->GetScale();
@@ -422,14 +427,17 @@ void Game::CreateGeometry()
 			lightsColorIntensity.push_back(1.0f);
 			lightsColorIntensity.push_back(1.0f);
 			lightsColorIntensity.push_back(1.0f);
-			lightsColorIntensity.push_back(1.0f);
+			lightsColorIntensity.push_back(3.0f);
 		}
-		lightsColorIntensity.push_back(0.1f);
-		lightsColorIntensity.push_back(0.1f);
-		lightsColorIntensity.push_back(0.25f);
-		lightsColorIntensity.push_back(0.4f);
-		lightsColorIntensity.push_back(0.6f);
-		lightsColorIntensity.push_back(0.75f);
+		//Ambient Color
+		lightsColorIntensity.push_back(1.0f);
+		lightsColorIntensity.push_back(1.0f);
+		lightsColorIntensity.push_back(1.0f);
+
+		//Background
+		lightsColorIntensity.push_back(2/255.0f);
+		lightsColorIntensity.push_back(14/255.0f);
+		lightsColorIntensity.push_back(23/255.0f);
 		lightsColorIntensity.push_back(1.0f);
 
 	}
@@ -438,19 +446,16 @@ void Game::CreateGeometry()
 	{
 		lights[0] = {};
 		lights[0].Type = 0;
-		lights[0].Position = DirectX::XMFLOAT3(-5.0f, 2.0f, 0.0f);
 		lights[0].Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
 
 
 		lights[1] = {};
 		lights[1].Type = 1;
-		lights[1].Position = DirectX::XMFLOAT3(-5.0f, 2.0f, 0.0f);
 		lights[1].Direction = DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f);
 
 
 		lights[2] = {};
 		lights[2].Type = 0;
-		lights[2].Position = DirectX::XMFLOAT3(-5.0f, 2.0f, 0.0f);
 		lights[2].Direction = DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f);
 
 
@@ -478,12 +483,21 @@ void Game::CreateGeometry()
 
 	// -- ATTACH TEXTURES TO MATERIALS -- 
 	{
-		for (int i = 0; i < 7; i++) 
+		materials[0]->AddTextureSRV(0, brick);
+		materials[0]->AddTextureSRV(1, volcanic);
+
+		materials[4]->AddTextureSRV(0, brick);
+		materials[5]->AddTextureSRV(0, volcanic);
+		materials[6]->AddTextureSRV(0, crosswalk);
+		materials[7]->AddTextureSRV(0, rocks);
+
+		materials[4]->AddTextureSRV(1, brickNormal);
+		materials[5]->AddTextureSRV(1, volcanicNormal);
+		materials[6]->AddTextureSRV(1, crosswalkNormal);
+		materials[7]->AddTextureSRV(1, rocksNormal);
+
+		for (int i = 0; i < 8; i++)
 		{
-			materials[i]->AddTextureSRV(0, brick);
-			materials[i]->AddTextureSRV(1, concrete);
-			materials[i]->AddTextureSRV(2, crosswalk);
-			materials[i]->AddTextureSRV(3, rocks);
 			materials[i]->AddSampler(0, samplerState);
 		}
 	}
@@ -528,11 +542,11 @@ void Game::CreateGeometry()
 
 	// Now to create entities using the meshes
 
-	entityList.push_back(Entity(cubeMesh, materials[1]));
-	entityList.push_back(Entity(cylinderMesh, materials[1]));
-	entityList.push_back(Entity(helixMesh, materials[1]));
-	entityList.push_back(Entity(sphereMesh, materials[1]));
-	entityList.push_back(Entity(torusMesh, materials[1]));
+	entityList.push_back(Entity(cubeMesh, materials[4]));
+	entityList.push_back(Entity(cylinderMesh, materials[5]));
+	entityList.push_back(Entity(helixMesh, materials[6]));
+	entityList.push_back(Entity(sphereMesh, materials[7]));
+	entityList.push_back(Entity(torusMesh, materials[5]));
 
 	for (unsigned int i = 0; i < 5; i++) 
 	{
@@ -589,13 +603,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->PSSetConstantBuffers(0, 1, psConstBuffer.GetAddressOf());
 	}
 
-	// -- BIND TEXTURES --
-	{
-		for (int i = 0; i < materials.size(); i++) 
-		{
-			materials[i]->BindTexturesSamplers();
-		}
-	}
+	
 
 	// -- UPDATE TINT, SCALE, OFFSET --
 	{
@@ -613,6 +621,8 @@ void Game::Draw(float deltaTime, float totalTime)
 		}
 	}
 
+
+
 	// DRAW geometry
 	// - These steps are generally repeated for EACH object you draw
 	// - Other Direct3D calls will also be necessary to do more complex things
@@ -620,23 +630,23 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		
 		float offset = sin(totalTime)/2;
-		for (int i = 0; i < 5; i++) 
+		for (int i = 0; i < entityList.size(); i++) 
 		{
+			entityList[i].BindTexturesSamplers();
 			entityList[i].GetTransform()->Rotate(0.0f, deltaTime, 0.0f);
-		}
-		
-		for (int i = 0; i < 5; i++)
-		{
+
 			if (cameraChoice == 0)
 			{
-				SetExternalData(totalTime, entityList[i].GetTint(), entityList[i].GetRoughness(), camera->GetPos(), entityList[i].GetScale(), entityList[i].GetOffset(), camera->GetView(), camera->GetProj(), entityList[i]);
+				SetExternalData(totalTime, camera->GetPos(), camera->GetView(), camera->GetProj(), entityList[i]);
 			}
-			else 
-			{ 
-				SetExternalData(totalTime, entityList[i].GetTint(), entityList[i].GetRoughness(), secondCamera->GetPos(), entityList[i].GetScale(), entityList[i].GetOffset(), secondCamera->GetView(), secondCamera->GetProj(), entityList[i]);
+			else
+			{
+				SetExternalData(totalTime, secondCamera->GetPos(), secondCamera->GetView(), secondCamera->GetProj(), entityList[i]);
 			}
+
 			entityList[i].Draw();
 		}
+
 	}
 
 	// Frame END
@@ -659,7 +669,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 }
 
-void Game::SetExternalData(float totalTime, DirectX::XMFLOAT4 tint , float roughness, DirectX::XMFLOAT3 worldPos, DirectX:: XMFLOAT2 scale, DirectX::XMFLOAT2 offset, DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e)
+void Game::SetExternalData(float totalTime, DirectX::XMFLOAT3 worldPos, DirectX::XMFLOAT4X4 view, DirectX::XMFLOAT4X4 proj, Entity e)
 {
 	ExtraVertexData vsData;
 	vsData.world = e.GetTransform()->GetWorldMatrix();
@@ -669,11 +679,11 @@ void Game::SetExternalData(float totalTime, DirectX::XMFLOAT4 tint , float rough
 	D3D11_MAPPED_SUBRESOURCE vertexMappedBuffer = {};
 
 	ExtraPixelData psData;
-	psData.colourTint = tint;
+	psData.colourTint = e.GetTint();
 	psData.totalTime = totalTime;
-	psData.scale = scale;
-	psData.offset = offset;
-	psData.roughness = roughness;
+	psData.scale = e.GetScale();
+	psData.offset = e.GetOffset();
+	psData.roughness = e.GetRoughness();
 	psData.worldPos = worldPos; 
 	psData.ambientColor = DirectX::XMFLOAT3(&lightsColorIntensity[5*4]);
 	memcpy(&psData.lights, &lights[0], sizeof(Light) * 5);
