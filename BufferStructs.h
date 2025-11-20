@@ -1,5 +1,6 @@
 #pragma once
 #include <DirectXMath.h>
+#include "Light.h";
 
 struct ExtraVertexData 
 {
@@ -8,6 +9,13 @@ struct ExtraVertexData
 	DirectX::XMFLOAT4X4 view;
 	DirectX::XMFLOAT4X4 proj;
 	
+};
+
+struct ExtraSkyVertexData
+{
+	DirectX::XMFLOAT4X4 view;
+	DirectX::XMFLOAT4X4 proj;
+
 };
 
 struct ExtraPixelData 

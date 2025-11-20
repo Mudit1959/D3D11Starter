@@ -49,6 +49,7 @@ Game::Game()
 	camera = std::make_shared<Camera>(10.0f, 0.0f, -30.0f, Window::AspectRatio());
 	secondCamera = std::make_shared<Camera>(0.0f, 0.0f, -10.0f, Window::AspectRatio());
 	
+	
 	// Set initial graphics API state
 	//  - These settings persist until we change them
 	//  - Some of these, like the primitive topology & input layout, probably won't change
@@ -430,9 +431,9 @@ void Game::CreateGeometry()
 			lightsColorIntensity.push_back(0.0f);
 		}
 		//Ambient Color
-		lightsColorIntensity.push_back(0.0f);
-		lightsColorIntensity.push_back(0.0f);
-		lightsColorIntensity.push_back(0.0f);
+		lightsColorIntensity.push_back(245/255.0f);
+		lightsColorIntensity.push_back(215/255.0f);
+		lightsColorIntensity.push_back(235/255.0f);
 
 		//Background
 		lightsColorIntensity.push_back(2/255.0f);
@@ -552,6 +553,16 @@ void Game::CreateGeometry()
 			entityList[i].GetTransform()->MoveAbsolute((4.0f*i), (-4.0f * i), 0.0f);
 	}
 
+	// Create sky using cube mesh
+	sky = std::make_shared<Sky>(cubeMesh, 
+		FixPath(L"../../Assets/Textures/clouds_pink/right.png").c_str(),
+		FixPath(L"../../Assets/Textures/clouds_pink/left.png").c_str(),
+		FixPath(L"../../Assets/Textures/clouds_pink/up.png").c_str(),
+		FixPath(L"../../Assets/Textures/clouds_pink/down.png").c_str(),
+		FixPath(L"../../Assets/Textures/clouds_pink/front.png").c_str(),
+		FixPath(L"../../Assets/Textures/clouds_pink/back.png").c_str(), 
+		FixPath(L"SkyVertex.cso").c_str(), FixPath(L"SkyPixel.cso").c_str());
+
 }
 
 
@@ -646,6 +657,10 @@ void Game::Draw(float deltaTime, float totalTime)
 			entityList[i].Draw();
 		}
 
+		if (cameraChoice == 0) { sky->Draw(camera); }
+		else { sky->Draw(secondCamera); }
+		
+
 	}
 
 	// Frame END
@@ -675,7 +690,6 @@ void Game::SetExternalData(float totalTime, DirectX::XMFLOAT3 worldPos, DirectX:
 	vsData.worldInv = e.GetTransform()->GetWorldInverseTransposeMatrix();
 	vsData.view = view;
 	vsData.proj = proj;
-	D3D11_MAPPED_SUBRESOURCE vertexMappedBuffer = {};
 
 	ExtraPixelData psData;
 	psData.colourTint = e.GetTint();
@@ -686,7 +700,6 @@ void Game::SetExternalData(float totalTime, DirectX::XMFLOAT3 worldPos, DirectX:
 	psData.worldPos = worldPos; 
 	psData.ambientColor = DirectX::XMFLOAT3(&lightsColorIntensity[5*4]);
 	memcpy(&psData.lights, &lights[0], sizeof(Light) * 5);
-	D3D11_MAPPED_SUBRESOURCE pixelMappedBuffer = {};
 
 	Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(vsData), D3D11_VERTEX_SHADER, 0);
 	Graphics::FillAndBindNextConstantBuffer(&psData, sizeof(psData), D3D11_PIXEL_SHADER, 0);

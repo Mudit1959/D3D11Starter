@@ -8,6 +8,7 @@
 #include "Entity.h"
 #include "Camera.h"
 #include "Light.h"
+#include "Sky.h"
 
 
 class Game
@@ -37,6 +38,7 @@ private:
 	void RefreshUI();
 
 	std::shared_ptr<Camera> camera, secondCamera;
+	std::shared_ptr<Sky> sky;
 	std::shared_ptr<Mesh> cubeMesh, sphereMesh, cylinderMesh, quadMesh, quadDoubleMesh, helixMesh, torusMesh;
 
 	bool showDemo;
