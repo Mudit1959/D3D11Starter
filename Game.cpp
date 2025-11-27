@@ -480,16 +480,15 @@ void Game::CreateGeometry()
 		lights[3] = {};
 		lights[3].Type = 7;
 		lights[3].Position = DirectX::XMFLOAT3(8.0f, -4.0f, -5.0f);
-		lights[3].Direction = DirectX::XMFLOAT3(1.0f, -1.0f, 0.0f);
 		lights[3].Range = 10.0f;
 
 		lights[4] = {};
 		lights[4].Type = 8;
-		lights[4].Position = DirectX::XMFLOAT3(8.0f, -10.0f, -0.7f);
+		lights[4].Position = DirectX::XMFLOAT3(5.0f, -7.0f, -0.7f);
 		lights[4].Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
 		lights[4].Range = 10.0f;
-		lights[4].SpotInnerAngle = XM_PI / 9;
-		lights[4].SpotOuterAngle = (XM_PI / 9) * 2.25f;
+		lights[4].SpotInnerAngle = XM_PI / 18;
+		lights[4].SpotOuterAngle = (XM_PI / 18) * 2.25;
 
 		for (int i = 0; i < 5; i++)
 		{
@@ -570,8 +569,8 @@ void Game::CreateGeometry()
 	// Now to create entities using the meshes
 
 	entityList.push_back(Entity(cubeMesh, materials[4]));
-	entityList.push_back(Entity(cylinderMesh, materials[8]));
-	entityList.push_back(Entity(helixMesh, materials[6]));
+	entityList.push_back(Entity(cylinderMesh, materials[6]));
+	entityList.push_back(Entity(helixMesh, materials[8]));
 	entityList.push_back(Entity(sphereMesh, materials[7]));
 	entityList.push_back(Entity(torusMesh, materials[5]));
 

@@ -33,11 +33,10 @@ float4 main(VertexToPixel input) : SV_TARGET
     // -- SAMPLE ROUGHNESS AND METALNESS -- 
     float roughness = RoughnessMap.Sample(BasicSampler, input.uv).r;
     float metalness = MetalnessMap.Sample(BasicSampler, input.uv).r * isMetal;
-    float3 f0 = lerp(0.04, surfaceColor.rgb, metalness);
-    
+    float3 f0 = lerp(0.4f, surfaceColor.rgb, metalness);
     
     // -- ADD SURFACE COLOR WITH TINT
-    total += surfaceColor * colorTint.rgb;
+    //total += surfaceColor;
     //total *= ambientColor;
     
     // -- SAMPLE NORMAL MAP, CHANGE NORMALS TO ACCOUNT FOR SURFACE UNEVENENESS -- 
@@ -54,7 +53,7 @@ float4 main(VertexToPixel input) : SV_TARGET
     input.normal = finalNormal; // Reassigned incoming data to hold new normal
     
     
-    float3 balancedDiffuse, microfacetBRDF, toCamera, halfVector;
+    float3 toCamera, halfVector;
     toCamera = normalize(camWorldPos - input.worldPos);
     
     for (int i = 0; i < 5; i++)
@@ -63,12 +62,25 @@ float4 main(VertexToPixel input) : SV_TARGET
         
         switch (lights[i].Type)
         {
-            case LIGHT_TYPE_PBR_DIRECTIONAL: // 6
+            case LIGHT_TYPE_POINT_SPECULAR: //3
+                total += (DiffusePointLight(input.worldPos, input.normal, surfaceColor, lights[i]) + SpecularPointTerm(input.worldPos, input.normal, lights[i], roughness)) * Attenuate(lights[i], input.worldPos);
+                break;
             
+            case LIGHT_TYPE_SPOT_SPECULAR: //5
+                total += (DiffuseSpotLight(input.worldPos, input.normal, surfaceColor, lights[i]) + SpecularSpotTerm(input.worldPos, input.normal, surfaceColor, lights[i], roughness)) * Attenuate(lights[i], input.worldPos);
+                break;
+            
+            case LIGHT_TYPE_PBR_DIRECTIONAL: // 6
+                total += CookTorranceDirectional(input.normal, toCamera, halfVector, f0, metalness, roughness, surfaceColor, lights[i]);
+                break;
             
             case LIGHT_TYPE_PBR_POINT: //7
+                total += CookTorrancePoint(input.worldPos, input.normal, toCamera, halfVector, f0, metalness, roughness, surfaceColor, lights[i]) * Attenuate(lights[i], input.worldPos);
+                break;
             
             case LIGHT_TYPE_PBR_SPOT: //8
+                total += CookTorranceSpot(input.worldPos, input.normal, toCamera, halfVector, f0, metalness, roughness, surfaceColor, lights[i]) * Attenuate(lights[i], input.worldPos);
+                break;
         }
     }
     
@@ -92,15 +104,10 @@ case LIGHT_TYPE_POINT_MATTE: //2
     total += DiffusePointLight(input.worldPos, input.normal, surfaceColor, lights[i]) * Attenuate(lights[i], input.worldPos);
     break;
             
-case LIGHT_TYPE_POINT_SPECULAR: //3
-    total += (DiffusePointLight(input.worldPos, input.normal, surfaceColor, lights[i]) + SpecularDirTerm(input.worldPos, input.normal, lights[i], roughness)) * Attenuate(lights[i], input.worldPos);
-    break;
+
             
 case LIGHT_TYPE_SPOT_MATTE: //4
     total += DiffuseSpotLight(input.worldPos, input.normal, surfaceColor, lights[i]) * Attenuate(lights[i], input.worldPos);
     break;
             
-case LIGHT_TYPE_SPOT_SPECULAR: //5
-    total += (DiffuseSpotLight(input.worldPos, input.normal, surfaceColor, lights[i]) + SpecularDirTerm(input.worldPos, input.normal, lights[i], roughness) * DirectionalTerm(input.worldPos, lights[i])) * Attenuate(lights[i], input.worldPos);
-    break;
-*/
+ */

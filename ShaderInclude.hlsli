@@ -120,10 +120,26 @@ float SpecularDirTerm(float3 surfaceWorldPos, float3 surfaceNormal, Light light,
 
 }
 
-// Used to determine if light is facing towards the object or not
-float DirectionalTerm(float3 surfaceWorldPos, Light light)
+float SpecularPointTerm(float3 surfaceWorldPos, float3 surfaceNormal, Light light, float roughness)
 {
-    return saturate(dot(surfaceWorldPos - light.Position, light.Direction));
+    float specExp = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
+    float3 V = normalize(camWorldPos - surfaceWorldPos);
+    float3 L = normalize(surfaceWorldPos - light.Position);
+    float3 R = reflect(L, surfaceNormal);
+    return pow(saturate(dot(R, V)), specExp) * light.Intensity;
+
+}
+
+// Used to determine if light is facing towards the object or not
+float SpecularSpotTerm(float3 surfaceWorldPos, float3 surfaceNormal, float3 surfaceColor, Light light, float roughness)
+{
+    float dotIL = saturate(dot(normalize(surfaceWorldPos - light.Position), light.Direction));
+    float cosOuterAngle = cos(light.SpotOuterAngle);
+    float cosInnerAngle = cos(light.SpotInnerAngle);
+    float fallOff = cosOuterAngle - cosInnerAngle;
+    
+    float spotTerm = saturate((cosOuterAngle - dotIL) / fallOff);
+    return spotTerm * SpecularPointTerm(surfaceWorldPos, surfaceNormal, light, roughness) * saturate(dot(light.Direction, surfaceWorldPos - light.Position));
 }
 
 float3 DiffusePointLight(float3 surfaceWorldPos, float3 surfaceNormal, float3 surfaceColor, Light light)
@@ -133,13 +149,13 @@ float3 DiffusePointLight(float3 surfaceWorldPos, float3 surfaceNormal, float3 su
 
 float3 DiffuseSpotLight(float3 surfaceWorldPos, float3 surfaceNormal, float3 surfaceColor, Light light)
 {
-    float dotIL = saturate(dot(surfaceWorldPos - light.Position, light.Direction));
+    float dotIL = saturate(dot(normalize(surfaceWorldPos - light.Position), light.Direction));
     float cosOuterAngle = cos(light.SpotOuterAngle);
     float cosInnerAngle = cos(light.SpotInnerAngle);
     float fallOff = cosOuterAngle - cosInnerAngle;
     
     float spotTerm = saturate((cosOuterAngle - dotIL) / fallOff);
-    return spotTerm * DiffusePointLight(surfaceWorldPos, surfaceNormal, surfaceColor, light);
+    return spotTerm * DiffusePointLight(surfaceWorldPos, surfaceNormal, surfaceColor, light) * saturate(dot(light.Direction, surfaceWorldPos - light.Position));
 }
 
 float Attenuate(Light light, float3 surfaceWorldPos)
@@ -194,18 +210,50 @@ float3 CookTorranceBRDF(float3 toLight, float3 toCamera, float3 surfaceNormal, f
 }
 
 // F - Fresnel Result
-float3 DiffuseEnergyConserve( float3 diffuse,float3 F, float metalness)
+float3 DiffuseEnergyConserve(float3 diffuse, float3 F, float metalness)
 {
     return diffuse * (1 - F) * (1 - metalness);
 }
 
-float3 CookTorranceDirectionalDiffuse(float3 surfaceNormal, float3 toCamera, float3 halfVector, float3 f0, 
+float3 CookTorranceDirectional(float3 surfaceNormal, float3 toCamera, float3 halfVector, float3 f0, 
 float metalness, float roughness, float3 surfaceColor, Light light)
 {
     float3 diffuse = saturate(dot(surfaceNormal, -light.Direction));
     float3 balancedDiffuse = DiffuseEnergyConserve(diffuse, Fresnel(toCamera, halfVector, f0), metalness);
-    float3 spec = CookTorranceBRDF(normalize(-light.Direction), toCamera, surfaceNormal, roughness * roughness, f0);
+    float3 spec = CookTorranceBRDF(normalize(-light.Direction), toCamera, surfaceNormal, roughness*roughness, f0);
     return ((balancedDiffuse * surfaceColor) + spec) * light.Color * light.Intensity;
+}
+
+float3 CookTorrancePoint(float3 surfaceWorldPos, float3 surfaceNormal, float3 toCamera, float3 halfVector, float3 f0,
+float metalness, float roughness, float3 surfaceColor, Light light)
+{
+    
+    float3 diffuse = saturate(dot(surfaceNormal, normalize(light.Position - surfaceWorldPos)));
+    float3 balancedDiffuse = DiffuseEnergyConserve(diffuse, Fresnel(toCamera, halfVector, f0), metalness);
+    float3 spec = CookTorranceBRDF(normalize(light.Position - surfaceWorldPos), toCamera, surfaceNormal, roughness*roughness, f0);
+    return ((balancedDiffuse * surfaceColor) + spec) * light.Color * light.Intensity;
+    
+}
+
+float3 CookTorranceSpot(float3 surfaceWorldPos, float3 surfaceNormal, float3 toCamera, float3 halfVector, float3 f0,
+float metalness, float roughness, float3 surfaceColor, Light light)
+{
+    float dotIL = saturate(dot(normalize(surfaceWorldPos - light.Position), normalize(light.Direction)));
+    float cosOuterAngle = cos(light.SpotOuterAngle);
+    float cosInnerAngle = cos(light.SpotInnerAngle);
+    float fallOff = cosOuterAngle - cosInnerAngle;
+    float spotTerm = saturate((cosOuterAngle - dotIL) / fallOff);
+    
+    float3 diffuse = saturate(dot(surfaceNormal, normalize(light.Position - surfaceWorldPos)));
+    float3 spec = CookTorranceBRDF(normalize(light.Position - surfaceWorldPos), toCamera, surfaceNormal, roughness*roughness, f0);
+    
+    diffuse *= spotTerm;
+    spec *= spotTerm;
+    
+    float3 balancedDiffuse = DiffuseEnergyConserve(diffuse, Fresnel(toCamera, halfVector, f0), metalness);
+    
+    return ((balancedDiffuse * surfaceColor) + spec) * light.Color * light.Intensity * saturate(dot(light.Direction, surfaceWorldPos - light.Position));
+
 }
 
 
