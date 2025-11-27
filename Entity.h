@@ -15,7 +15,7 @@ public:
 	DirectX::XMFLOAT2 GetScale();
 	DirectX::XMFLOAT2 GetOffset();
 	void BindTexturesSamplers();
-	float GetRoughness();
+	int GetIsMetal();
 
 private:
 	std::shared_ptr<Mesh> mesh;

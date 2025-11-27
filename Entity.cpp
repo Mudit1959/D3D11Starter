@@ -30,4 +30,4 @@ void Entity::BindTexturesSamplers()
 DirectX::XMFLOAT4 Entity::GetTint() { return material->GetTint(); }
 DirectX::XMFLOAT2 Entity::GetScale() { return material->GetScale(); }
 DirectX::XMFLOAT2 Entity::GetOffset() { return material->GetOffset(); }
-float Entity::GetRoughness() { return material->GetRoughness(); }
+int Entity::GetIsMetal() { return material->GetIsMetal(); }

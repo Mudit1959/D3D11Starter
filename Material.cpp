@@ -5,14 +5,13 @@
 /// Create a material using a color tint, a pointer to a C++ vertex shader object , and a pointer to a C++ pixel shader object
 /// </summary>
 /// <param name="t"> - 4 component tint</param>
+/// <param name="metal"> - Is it a metal? </param>
 /// <param name="vs"> - C++ vertex shader object pointer</param>
 /// <param name="ps"> - C++ pixel shader object pointer</param>
-Material::Material(DirectX::XMFLOAT4 t, float r, Microsoft::WRL::ComPtr<ID3D11VertexShader> vs, Microsoft::WRL::ComPtr<ID3D11PixelShader> ps) 
+Material::Material(DirectX::XMFLOAT4 t, int metal, Microsoft::WRL::ComPtr<ID3D11VertexShader> vs, Microsoft::WRL::ComPtr<ID3D11PixelShader> ps) 
 {
 	tint = t;
-	roughness = r;
-	if (r < 0.0f) { roughness = 0; }
-	if (r > 1.0f) { roughness = 1; }
+	IsMetal = metal;
 	scale = DirectX::XMFLOAT2(1, 1);
 	offset = DirectX::XMFLOAT2(0, 0);
 	vertexShader = vs;
@@ -43,7 +42,7 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Material::GetTextureSRV(int s)
 DirectX::XMFLOAT4 Material::GetTint() { return tint; }
 DirectX::XMFLOAT2 Material::GetScale() { return scale; }
 DirectX::XMFLOAT2 Material::GetOffset() { return offset; }
-float Material::GetRoughness() { return roughness; }
+int Material::GetIsMetal() { return IsMetal; }
 
 void Material::SetTint(DirectX::XMFLOAT4 t) { tint = t; }
 void Material::SetVS(Microsoft::WRL::ComPtr<ID3D11VertexShader> vs) { vertexShader = vs; }

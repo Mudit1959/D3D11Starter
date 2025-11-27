@@ -1,6 +1,6 @@
 #include "ShaderInclude.hlsli"
 
-static const float PI = 3.14159265f;
+
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader

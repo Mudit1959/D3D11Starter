@@ -28,9 +28,11 @@ struct ExtraPixelData
 	DirectX::XMFLOAT3 worldPos;
 	float totalTime;
 
-	float roughness;
+	int IsMetal;
 	DirectX::XMFLOAT3 ambientColor; 
 
 	Light lights[5]; // Array of exactly 5 lights
+
+	
 	
 };
