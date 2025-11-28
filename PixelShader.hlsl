@@ -74,7 +74,7 @@ float4 main(VertexToPixel input) : SV_TARGET
                 
                 add = DiffuseEnergyConserve(DiffuseLambertPBR(input.normal, toLight, surfaceColor),
                                                 Fresnel(toCamera, halfVector, f0),
-                                                metalness);
+                                                metalness) * surfaceColor;
                 add += CookTorranceBRDF(toLight, toCamera, halfVector, input.normal, roughness, f0);
             
                 add *= lights[i].Color * lights[i].Intensity;
@@ -89,7 +89,7 @@ float4 main(VertexToPixel input) : SV_TARGET
                 
                 add = DiffuseEnergyConserve(DiffuseLambertPBR(input.normal, toLight, surfaceColor),
                                                 Fresnel(toCamera, halfVector, f0),
-                                                metalness);
+                                                metalness) * surfaceColor;
                 add += CookTorranceBRDF(toLight, toCamera, halfVector, input.normal, roughness, f0);
             
                 add *= Attenuate(lights[i], input.worldPos);
@@ -106,11 +106,10 @@ float4 main(VertexToPixel input) : SV_TARGET
             
                 add = DiffuseEnergyConserve(DiffuseLambertPBR(input.normal, toLight, surfaceColor),
                                                Fresnel(toCamera, halfVector, f0),
-                                                metalness);
+                                                metalness) * surfaceColor;
                 add += CookTorranceBRDF(toLight, toCamera, halfVector, input.normal, roughness, f0);
             
-                add *= Attenuate(lights[i], input.worldPos);
-                add *= lights[i].Color * lights[i].Intensity;
+                
             
                 float surfaceCos = saturate(dot(-toLight, lights[i].Direction));
                 float cosOuter = cos(lights[i].SpotOuterAngle);
@@ -120,6 +119,8 @@ float4 main(VertexToPixel input) : SV_TARGET
                 float spotTerm = saturate((cosOuter - surfaceCos) / fallOff);
                 add *= spotTerm;
                 
+                add *= Attenuate(lights[i], input.worldPos);
+                add *= lights[i].Color * lights[i].Intensity;
                 
                 total += add;
                 
