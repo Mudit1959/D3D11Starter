@@ -74,7 +74,7 @@ float4 main(VertexToPixel input) : SV_TARGET
                 
                 add = DiffuseEnergyConserve(DiffuseLambertPBR(input.normal, toLight, surfaceColor),
                                                 Fresnel(toCamera, halfVector, f0),
-                                                metalness) * surfaceColor;
+                                                metalness);
                 add += CookTorranceBRDF(toLight, toCamera, halfVector, input.normal, roughness, f0);
             
                 add *= lights[i].Color * lights[i].Intensity;
@@ -89,7 +89,7 @@ float4 main(VertexToPixel input) : SV_TARGET
                 
                 add = DiffuseEnergyConserve(DiffuseLambertPBR(input.normal, toLight, surfaceColor),
                                                 Fresnel(toCamera, halfVector, f0),
-                                                metalness) * surfaceColor;
+                                                metalness);
                 add += CookTorranceBRDF(toLight, toCamera, halfVector, input.normal, roughness, f0);
             
                 add *= Attenuate(lights[i], input.worldPos);
@@ -106,7 +106,7 @@ float4 main(VertexToPixel input) : SV_TARGET
             
                 add = DiffuseEnergyConserve(DiffuseLambertPBR(input.normal, toLight, surfaceColor),
                                                Fresnel(toCamera, halfVector, f0),
-                                                metalness) * surfaceColor;
+                                                metalness);
                 add += CookTorranceBRDF(toLight, toCamera, halfVector, input.normal, roughness, f0);
             
                 

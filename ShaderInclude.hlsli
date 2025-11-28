@@ -124,7 +124,7 @@ float Attenuate(Light light, float3 surfaceWorldPos)
 
 float3 DiffuseLambertPBR(float3 surfaceNormal, float3 toLightNormalized, float3 surfaceColor)
 {
-    return saturate(dot(surfaceNormal, toLightNormalized));
+    return saturate(dot(surfaceNormal, toLightNormalized)) * surfaceColor;
 }
 
 // Trowbridge-Reitz is used to calculate the percentage of microfacets that could reflect light towards the camera
