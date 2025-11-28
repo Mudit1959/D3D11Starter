@@ -1,0 +1,34 @@
+case LIGHT_TYPE_DIRECTIONAL: //0
+    toLight = normalize(-lights[i].Direction);
+    total += DiffuseLambertTerm(input.normal, surfaceColor, toLight, lights[i]);
+    total += SpecularPhongTerm(input.normal, surfaceColor, -toLight, toCamera, roughness, lights[i]);
+    break;
+            
+case LIGHT_TYPE_POINT: //1
+    // Point lights emit in all directions, so we will depend on the range and position of the light
+    toLight = normalize(lights[i].Position - input.worldPos);
+    add = DiffuseLambertTerm(input.normal, surfaceColor, toLight, lights[i]);
+    add += SpecularPhongTerm(input.normal, surfaceColor, -toLight, toCamera, roughness, lights[i]);
+    add *= Attenuate(lights[i], input.worldPos);
+            
+    total += add;
+    break;
+            
+case LIGHT_TYPE_SPOT:
+    // Spot lights emit light in a conical manner, so we will depend on range, position, and angles!
+    toLight = normalize(lights[i].Position - input.worldPos);
+    add = DiffuseLambertTerm(input.normal, surfaceColor, toLight, lights[i]);
+    add += SpecularPhongTerm(input.normal, surfaceColor, -toLight, toCamera, roughness, lights[i]);
+    add *= Attenuate(lights[i], input.worldPos);
+            
+    float surfaceCos = saturate(dot(-toLight, lights[i].Direction));
+    float cosOuter = cos(lights[i].SpotOuterAngle);
+    float cosInner = cos(lights[i].SpotInnerAngle);
+    float fallOff = cosOuter - cosInner;
+            
+    float spotTerm = saturate((cosOuter - surfaceCos) / fallOff);
+    add *= spotTerm;
+                
+    total += add;
+                
+    break;

@@ -171,6 +171,7 @@
     <Text Include="BufferSetup.txt" />
     <Text Include="Shader.txt" />
     <Text Include="OldMeshes.txt" />
+    <Text Include="NonPBRShader.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ShaderInclude.hlsli">

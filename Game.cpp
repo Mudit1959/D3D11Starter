@@ -352,7 +352,7 @@ void Game::CreateGeometry()
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brick, volcanic, crosswalk, rocks, metallic,
 		brickNormal, volcanicNormal, crosswalkNormal, rocksNormal, metallicNormal,
 		brickRough, volcanicRough, crosswalkRough, rocksRough, metallicRough,
-		metallicMetal;
+		metallicMetal, nonMetal;
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
 
 	//  -- TEXTURES -- 
@@ -381,6 +381,8 @@ void Game::CreateGeometry()
 
 		// Load Metalness Maps as SRVs
 		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/metallic_metalness.png").c_str(), nullptr, metallicMetal.GetAddressOf());
+		CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/no_metalness.png").c_str(), nullptr, nonMetal.GetAddressOf());
+
 
 		// Once the textures have been loaded, create a sampler state(ID3D11SamplerState) and its description (ID3D11SamplerStateDesc)
 
@@ -463,27 +465,27 @@ void Game::CreateGeometry()
 	// -- CREATING LIGHTS --
 	{
 		lights[0] = {};
-		lights[0].Type = 6;
+		lights[0].Type = 3;
 		lights[0].Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
 
 
 		lights[1] = {};
-		lights[1].Type = 6;
+		lights[1].Type = 3;
 		lights[1].Direction = DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f);
 
 
 		lights[2] = {};
-		lights[2].Type = 6;
+		lights[2].Type = 3;
 		lights[2].Direction = DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f);
 
 
 		lights[3] = {};
-		lights[3].Type = 7;
+		lights[3].Type = 4;
 		lights[3].Position = DirectX::XMFLOAT3(8.0f, -4.0f, -5.0f);
 		lights[3].Range = 10.0f;
 
 		lights[4] = {};
-		lights[4].Type = 8;
+		lights[4].Type = 5;
 		lights[4].Position = DirectX::XMFLOAT3(5.0f, -7.0f, -0.7f);
 		lights[4].Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
 		lights[4].Range = 10.0f;
@@ -520,6 +522,10 @@ void Game::CreateGeometry()
 		materials[7]->AddTextureSRV(2, rocksRough);
 		materials[8]->AddTextureSRV(2, metallicRough);
 
+		materials[4]->AddTextureSRV(3, nonMetal);
+		materials[5]->AddTextureSRV(3, nonMetal);
+		materials[6]->AddTextureSRV(3, nonMetal);
+		materials[7]->AddTextureSRV(3, nonMetal);
 		materials[8]->AddTextureSRV(3, metallicMetal);
 
 		for (int i = 0; i < 8; i++)
@@ -569,7 +575,7 @@ void Game::CreateGeometry()
 	// Now to create entities using the meshes
 
 	entityList.push_back(Entity(cubeMesh, materials[4]));
-	entityList.push_back(Entity(cylinderMesh, materials[6]));
+	entityList.push_back(Entity(cylinderMesh, materials[5]));
 	entityList.push_back(Entity(helixMesh, materials[8]));
 	entityList.push_back(Entity(sphereMesh, materials[7]));
 	entityList.push_back(Entity(torusMesh, materials[5]));

@@ -259,6 +259,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="BufferSetup.txt" />
+    <Text Include="NonPBRShader.txt" />
     <Text Include="OldMeshes.txt" />
     <Text Include="Shader.txt" />
   </ItemGroup>

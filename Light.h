@@ -1,15 +1,16 @@
 #pragma once
 #include <DirectXMath.h>
 #define LIGHT_TYPE_DIRECTIONAL_MATTE 0
-#define LIGHT_TYPE_DIRECTIONAL_SPECULAR 1
-#define LIGHT_TYPE_POINT_MATTE 2
-#define LIGHT_TYPE_POINT_SPECULAR 3
-#define LIGHT_TYPE_SPOT_MATTE 4
-#define LIGHT_TYPE_SPOT_SPECULAR 5
+#define LIGHT_TYPE_POINT 1
+#define LIGHT_TYPE_SPOT 2
+#define LIGHT_TYPE_PBR_DIRECTIONAL 3
+#define LIGHT_TYPE_PBR_POINT 4
+#define LIGHT_TYPE_PBR_SPOT 5
+
 
 struct Light
 {
-	int Type; // Which kind of light? 0, 1 or 2 (see above)
+	int Type; // Which kind of light? 0, 1, 2, 3, 4, 5 (see above)
 	DirectX::XMFLOAT3 Direction; // Directional and Spot lights need a direction
 
 	float Range; // Point and Spot lights have a max range for attenuation
