@@ -34,6 +34,7 @@ std::vector<std::shared_ptr<Material>> materials;
 
 
 int cameraChoice = 0;
+bool displaySkybox = true;
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -237,6 +238,12 @@ void Game::RefreshUI()
 			ImGui::Text("Z: %f", pos.z);
 		}
 
+		ImGui::TreePop();
+	}
+
+	if (ImGui::TreeNode("SkyBox & Shadow Map"))
+	{
+		ImGui::Checkbox("Show SkyBox", &displaySkybox);
 		ImGui::TreePop();
 	}
 	
@@ -688,9 +695,12 @@ void Game::Draw(float deltaTime, float totalTime)
 
 			entityList[i].Draw();
 		}
-
-		//if (cameraChoice == 0) { sky->Draw(camera); }
-		//else { sky->Draw(secondCamera); }
+		if (displaySkybox) 
+		{
+			if (cameraChoice == 0) { sky->Draw(camera); }
+			else { sky->Draw(secondCamera); }
+		}
+		
 		
 
 	}

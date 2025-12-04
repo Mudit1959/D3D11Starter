@@ -141,7 +141,7 @@ float TrowbridgeReitz(float3 surfaceNormal, float3 halfVector, float roughness) 
 }
 
 // Determines the reflectiveness of the material based on viewing angle and the glossiness of the material
-float Fresnel(float3 toCamera, float3 halfVector, float3 f0) // F()
+float3 Fresnel(float3 toCamera, float3 halfVector, float3 f0) // F()
 {
     float VdotH = saturate(dot(toCamera, halfVector));
     return f0 + (1 - f0) * pow(1 - VdotH, 5);
@@ -167,7 +167,7 @@ float3 CookTorranceBRDF(float3 toLight, float3 toCamera, float3 halfVector, floa
 {
     float3 D = TrowbridgeReitz(surfaceNormal, halfVector, roughness);
     float G = G_Schlick(surfaceNormal, toCamera, roughness);
-    float F = Fresnel(toCamera, halfVector, f0);
+    float3 F = Fresnel(toCamera, halfVector, f0);
     
     float3 specularResult = (D * F * G) / 4;
     return specularResult * saturate(dot(surfaceNormal, toLight));

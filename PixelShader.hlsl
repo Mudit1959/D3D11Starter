@@ -24,7 +24,7 @@ float4 main(VertexToPixel input) : SV_TARGET
     input.uv = input.uv * scale + offset;
     input.normal = normalize(input.normal);
     
-    float3 total = (0.0f, 0.0f, 0.0f);
+    float3 total = float3(0.0f, 0.0f, 0.0f);
     
     // -- GAMMA CORRECT SURFACE(ALBEDO) COLOR --
     float3 surfaceColor = Albedo.Sample(BasicSampler, input.uv).rgb;
