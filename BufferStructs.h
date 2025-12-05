@@ -11,6 +11,13 @@ struct ExtraVertexData
 	
 };
 
+struct ExtraShadowData 
+{
+	DirectX::XMFLOAT4X4 world;
+	DirectX::XMFLOAT4X4 lightView;
+	DirectX::XMFLOAT4X4 lightProj;
+};
+
 struct ExtraSkyVertexData
 {
 	DirectX::XMFLOAT4X4 view;

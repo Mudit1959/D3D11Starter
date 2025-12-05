@@ -17,6 +17,11 @@ void Entity::Draw()
 	mesh->Draw();
 }
 
+void Entity::DrawShadow() 
+{
+	mesh->Draw();
+}
+
 int Entity::GetMeshIndexCount() 
 {
 	return mesh->GetIndexCount();

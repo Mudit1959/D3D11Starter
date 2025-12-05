@@ -36,6 +36,9 @@ private:
 	void CreateGeometry();
 	void UpdateImGui(float deltaTime);
 	void RefreshUI();
+	void CreateShadowMap(); // Create the shadow map's required resources
+	void DrawToShadowMap(float deltaTime, float totalTime, Light light); 
+	
 
 	std::shared_ptr<Camera> camera, secondCamera;
 	std::shared_ptr<Sky> sky;
@@ -59,5 +62,15 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> psConstBuffer;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> vertexInputLayout;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> shadowTexture;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> shadowDSV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> shadowRasterizer;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
+	DirectX::XMFLOAT4X4 lightViewMatrix;
+	DirectX::XMFLOAT4X4 lightProjectionMatrix;
+
+	
+
 };
 

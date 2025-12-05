@@ -35,6 +35,7 @@ std::vector<std::shared_ptr<Material>> materials;
 
 int cameraChoice = 0;
 bool displaySkybox = true;
+int shadowMapResolution = 1024;
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -46,6 +47,7 @@ Game::Game()
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
 	CreateGeometry();
+	CreateShadowMap();
 	Initialize(); //Initialize ImGui
 	camera = std::make_shared<Camera>(10.0f, 0.0f, -30.0f, Window::AspectRatio());
 	secondCamera = std::make_shared<Camera>(0.0f, 0.0f, -10.0f, Window::AspectRatio());
@@ -244,6 +246,7 @@ void Game::RefreshUI()
 	if (ImGui::TreeNode("SkyBox & Shadow Map"))
 	{
 		ImGui::Checkbox("Show SkyBox", &displaySkybox);
+		ImGui::Image(shadowSRV.Get(), ImVec2(512, 512) );
 		ImGui::TreePop();
 	}
 	
@@ -412,6 +415,7 @@ void Game::CreateGeometry()
 	// Load shaders, create materials
 	{
 		LoadVertexShader(FixPath(L"VertexShader.cso"));
+		LoadVertexShader(FixPath(L"ShadowMapVertex.cso"));
 
 		LoadPixelShader(FixPath(L"PixelShader.cso"));
 		LoadPixelShader(FixPath(L"DebugUVs.cso"));
@@ -454,7 +458,7 @@ void Game::CreateGeometry()
 			lightsColorIntensity.push_back(1.0f);
 			lightsColorIntensity.push_back(1.0f);
 			lightsColorIntensity.push_back(1.0f);
-			lightsColorIntensity.push_back(0.0f);
+			lightsColorIntensity.push_back(1.0f);
 		}
 		//Ambient Color
 		lightsColorIntensity.push_back(245/255.0f);
@@ -473,7 +477,7 @@ void Game::CreateGeometry()
 	{
 		lights[0] = {};
 		lights[0].Type = 3;
-		lights[0].Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+		lights[0].Direction = DirectX::XMFLOAT3(1.0f, -1.0f, 1.0f);
 
 
 		lights[1] = {};
@@ -586,11 +590,15 @@ void Game::CreateGeometry()
 	entityList.push_back(Entity(helixMesh, materials[8]));
 	entityList.push_back(Entity(sphereMesh, materials[7]));
 	entityList.push_back(Entity(torusMesh, materials[5]));
+	entityList.push_back(Entity(quadDoubleMesh, materials[6]));
 
 	for (unsigned int i = 0; i < 5; i++) 
 	{
-			entityList[i].GetTransform()->MoveAbsolute((4.0f*i), (-4.0f * i), 0.0f);
+			entityList[i].GetTransform()->MoveAbsolute(-5 + (3.0f*i), (-2.0f), 0.0f);
 	}
+
+	entityList[5].GetTransform()->SetScale(20.0f, 1.0f, 20.0f);
+	entityList[5].GetTransform()->MoveAbsolute(8.0f, -6.0f, 1.0f);
 
 	// Create sky using cube mesh
 	sky = std::make_shared<Sky>(cubeMesh, 
@@ -633,6 +641,112 @@ void Game::Update(float deltaTime, float totalTime)
 		Window::Quit();
 }
 
+void Game::CreateShadowMap()
+{
+	D3D11_TEXTURE2D_DESC shadowDesc = {};
+	shadowDesc.Width = shadowMapResolution; // Ideally a power of 2 (like 1024)
+	shadowDesc.Height = shadowMapResolution; // Ideally a power of 2 (like 1024)
+	shadowDesc.ArraySize = 1;
+	shadowDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	shadowDesc.CPUAccessFlags = 0;
+	shadowDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	shadowDesc.MipLevels = 1;
+	shadowDesc.MiscFlags = 0;
+	shadowDesc.SampleDesc.Count = 1;
+	shadowDesc.SampleDesc.Quality = 0;
+	shadowDesc.Usage = D3D11_USAGE_DEFAULT;
+	Graphics::Device->CreateTexture2D(&shadowDesc, 0, shadowTexture.GetAddressOf());
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC shadowDSVDesc = {};
+	shadowDSVDesc.Format = DXGI_FORMAT_D32_FLOAT; // d32 is specifically meant to store depth information
+	shadowDSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	shadowDSVDesc.Texture2D.MipSlice = 0;
+	Graphics::Device->CreateDepthStencilView(shadowTexture.Get(), &shadowDSVDesc, shadowDSV.GetAddressOf());
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC shadowSRVDesc = {};
+	shadowSRVDesc.Format = DXGI_FORMAT_R32_FLOAT; // r32 is specifically meant to store red channel information
+	shadowSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shadowSRVDesc.Texture2D.MipLevels = 1;
+	shadowSRVDesc.Texture2D.MostDetailedMip = 0;
+	Graphics::Device->CreateShaderResourceView(shadowTexture.Get(), &shadowSRVDesc, shadowSRV.GetAddressOf());
+
+	D3D11_RASTERIZER_DESC shadowRastDesc = {};
+	shadowRastDesc.FillMode = D3D11_FILL_SOLID;
+	shadowRastDesc.CullMode = D3D11_CULL_BACK;
+	shadowRastDesc.DepthClipEnable = false; // Keep out-of-frustum objects!
+	shadowRastDesc.DepthBias = 1000; // Min. precision units, not world units!
+	shadowRastDesc.SlopeScaledDepthBias = 1.0f; // Bias more based on slope
+	Graphics::Device->CreateRasterizerState(&shadowRastDesc, &shadowRasterizer);
+
+	D3D11_SAMPLER_DESC shadowSampDesc = {};
+	shadowSampDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	shadowSampDesc.ComparisonFunc = D3D11_COMPARISON_LESS;
+	shadowSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.BorderColor[0] = 1.0f; // Only need the first component
+	Graphics::Device->CreateSamplerState(&shadowSampDesc, &shadowSampler);
+
+}
+
+void Game::DrawToShadowMap(float deltaTime, float totalTime, Light light) 
+{
+	// Clear the shadow map's resources
+	Graphics::Context->ClearDepthStencilView(shadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	ID3D11RenderTargetView* noView = {};
+	// Set the render target to null, and write to only depth buffer in this case
+	Graphics::Context->OMSetRenderTargets(0, 0, shadowDSV.Get());
+
+	// Grab the correct shaders
+	
+	Graphics::Context->PSSetShader(0, 0, 0);
+
+	//Set the correct viewport
+	D3D11_VIEWPORT viewport = {};
+	viewport.Width = (float)shadowMapResolution;
+	viewport.Height = (float)shadowMapResolution;
+	viewport.MaxDepth = 1.0f;
+	Graphics::Context->RSSetViewports(1, &viewport);
+	Graphics::Context->RSSetState(shadowRasterizer.Get());
+
+	Graphics::Context->VSSetShader(vertexShaders[1].Get(), 0, 0);
+
+	
+
+	// Calculate the light's view and projection matrices
+	DirectX::XMVECTOR lightDir = DirectX::XMLoadFloat3(&(light.Direction));
+	XMMATRIX lightView = XMMatrixLookToLH(-lightDir * 18.0f, lightDir, DirectX::XMVectorSet(0, 1, 0, 0));
+
+	float lightProjectionSize = 15.0f;
+	DirectX::XMMATRIX lightProj = XMMatrixOrthographicLH(lightProjectionSize, lightProjectionSize, 1.0f, 100.0f);
+
+	ExtraShadowData sData;
+	XMStoreFloat4x4(&(sData.lightView), lightView);
+	XMStoreFloat4x4(&(sData.lightProj), lightProj);
+
+
+	for (int i = 0; i < entityList.size(); i++)
+	{
+		if(i != 5){ entityList[i].GetTransform()->Rotate(0.0f, deltaTime, 0.0f); }
+		
+
+		sData.world = entityList[i].GetTransform()->GetWorldMatrix();
+		Graphics::FillAndBindNextConstantBuffer(&sData, sizeof(sData), D3D11_VERTEX_SHADER, 0);
+
+
+		entityList[i].DrawShadow();
+	}
+
+	// Set to render the world now
+	viewport.Width = (float)Window::Width();
+	viewport.Height = (float)Window::Height();
+	Graphics::Context->RSSetViewports(1, &viewport);
+	Graphics::Context->OMSetRenderTargets(1, Graphics::BackBufferRTV.GetAddressOf(),Graphics::DepthBufferDSV.Get());
+	Graphics::Context->RSSetState(0);
+
+
+}
 
 // --------------------------------------------------------
 // Clear the screen, redraw everything, present to the user
@@ -643,11 +757,15 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - These things should happen ONCE PER FRAME
 	// - At the beginning of Game::Draw() before drawing *anything*
 	{
+
+		// Plot the shadow map each frame, BEFORE drawing entities
+		Game::DrawToShadowMap(deltaTime, totalTime, lights[0]);
+
 		// Clear the back buffer (erase what's on screen) and depth buffer
 		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	&lightsColorIntensity[5*4+3]);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-		// Bind the constant buffer
+		// Bind the constant buffers
 		Graphics::Context->VSSetConstantBuffers(0, 1, vsConstBuffer.GetAddressOf());
 		Graphics::Context->PSSetConstantBuffers(0, 1, psConstBuffer.GetAddressOf());
 	}
@@ -670,6 +788,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		}
 	}
 
+	
 
 
 	// DRAW geometry
@@ -682,7 +801,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		for (int i = 0; i < entityList.size(); i++) 
 		{
 			entityList[i].BindTexturesSamplers();
-			entityList[i].GetTransform()->Rotate(0.0f, deltaTime, 0.0f);
+			if (i != 5) { entityList[i].GetTransform()->Rotate(0.0f, deltaTime, 0.0f); }
 
 			if (cameraChoice == 0)
 			{

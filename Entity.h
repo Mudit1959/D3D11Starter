@@ -10,6 +10,7 @@ public:
 	Entity(std::shared_ptr<Mesh> meshIn, std::shared_ptr<Material> materialIn);
 	Transform* GetTransform();
 	void Draw();
+	void DrawShadow();
 	int GetMeshIndexCount();
 	DirectX::XMFLOAT4 GetTint();
 	DirectX::XMFLOAT2 GetScale();

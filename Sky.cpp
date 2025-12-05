@@ -203,12 +203,11 @@ void Sky::LoadVertexShader(const wchar_t* path)
 void Sky::Draw(std::shared_ptr<Camera> camera) 
 {
 	
-	Graphics::Context->VSSetShader(skyVertexShader.Get(), 0, 0);
-	Graphics::Context->PSSetShader(skyPixelShader.Get(), 0, 0);
-
-
 	Graphics::Context->RSSetState(rasterizerState.Get());
 	Graphics::Context->OMSetDepthStencilState(depthStencilState.Get(), 0);
+
+	Graphics::Context->VSSetShader(skyVertexShader.Get(), 0, 0);
+	Graphics::Context->PSSetShader(skyPixelShader.Get(), 0, 0);
 
 	Graphics::Context->PSSetShaderResources(0, 1, cubeMapSRV.GetAddressOf());
 	Graphics::Context->PSSetSamplers(0, 1, samplerState.GetAddressOf());

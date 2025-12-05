@@ -166,6 +166,9 @@
     <FxCompile Include="SkyPixel.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="ShadowMapVertex.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="BufferSetup.txt" />
