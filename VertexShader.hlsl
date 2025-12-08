@@ -3,10 +3,12 @@
 //Buffer for external data
 cbuffer ExternalVertexData : register(b0)
 {
-    float4x4 world			: WORLDMATRIX;
+    float4x4 world			: WORLD_MATRIX;
     float4x4 worldInv		: WORLD_INVERSE_MATRIX;
-    float4x4 view			: VIEWMATRIX;
-    float4x4 proj			: PROJECTIONMATRIX;
+    float4x4 view			: VIEW_MATRIX;
+    float4x4 proj			: PROJECTION_MATRIX;
+    float4x4 shadowView		: LIGHT_VIEW_MATRIX;
+    float4x4 shadowProj		: LIGHT_PROJECTION_MATRIX;
 };
 
 // --------------------------------------------------------
@@ -35,6 +37,9 @@ VertexToPixel main( VertexShaderInput input )
     output.tangent = mul((float3x3)world, input.tangent);
     output.worldPos = mul(world, float4(input.localPosition, 1.0f)).xyz;
     output.uv = input.uv;
+	
+    matrix shadowWVP = mul(shadowProj, mul(shadowView, world));
+    output.shadowDepth =  mul(shadowWVP, float4(input.localPosition, 1.0f));
 
 	// Pass the color through 
 	// - The values will be interpolated per-pixel by the rasterizer

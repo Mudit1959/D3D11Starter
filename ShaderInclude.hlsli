@@ -37,6 +37,8 @@ struct VertexToPixel
     float3 worldPos : POSITION;
     
     float3 tangent : TANGENT;
+    
+    float4 shadowDepth : SHADOW_POSTION; 
 };
 
 //Random value

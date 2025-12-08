@@ -4,7 +4,9 @@ Texture2D Albedo : register(t0); // "t" registers for textures
 Texture2D NormalMap : register(t1);
 Texture2D RoughnessMap : register(t2);
 Texture2D MetalnessMap : register(t3);
+Texture2D ShadowMap : register(t4);
 SamplerState BasicSampler : register(s0); // "s" registers for samplers
+SamplerComparisonState ShadowCmpSampler : register(s1);
 
 
 // --------------------------------------------------------
@@ -54,10 +56,16 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3 toCamera, halfVector ,toLight, add;
     toCamera = normalize(camWorldPos - input.worldPos);
     
+    input.shadowDepth /= input.shadowDepth.w;
+    float worldDepth = input.shadowDepth.z;
+    
+    float2 shadowMapUV = (input.shadowDepth.xy * 0.5f) + 0.5f;
+    shadowMapUV.y = 1 - shadowMapUV.y;
+    float shadowAmount = ShadowMap.SampleCmpLevelZero(ShadowCmpSampler, shadowMapUV, worldDepth).r;
+    
+    
     for (int i = 0; i < 5; i++)
     {
-        
-        
         
         switch (lights[i].Type)
         {
@@ -78,6 +86,11 @@ float4 main(VertexToPixel input) : SV_TARGET
                 add += CookTorranceBRDF(toLight, toCamera, halfVector, input.normal, roughness, f0);
             
                 add *= lights[i].Color * lights[i].Intensity;
+            
+                if (i == 0)
+                {
+                    add *= shadowAmount;
+                }
                 
                 total += add;
                 break;

@@ -32,6 +32,7 @@ std::vector<Microsoft::WRL::ComPtr<ID3D11VertexShader>> vertexShaders;
 std::vector<Microsoft::WRL::ComPtr<ID3D11PixelShader>> pixelShaders;
 std::vector<std::shared_ptr<Material>> materials;
 
+DirectX::XMMATRIX lightView, lightProj;
 
 int cameraChoice = 0;
 bool displaySkybox = true;
@@ -500,8 +501,8 @@ void Game::CreateGeometry()
 		lights[4].Position = DirectX::XMFLOAT3(5.0f, -7.0f, -0.7f);
 		lights[4].Direction = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
 		lights[4].Range = 10.0f;
-		lights[4].SpotInnerAngle = XM_PI / 18;
-		lights[4].SpotOuterAngle = (XM_PI / 18) * 2.25;
+		lights[4].SpotInnerAngle = XM_PI / 18.0f;
+		lights[4].SpotOuterAngle = (XM_PI / 18) * 2.25f;
 
 		for (int i = 0; i < 5; i++)
 		{
@@ -539,7 +540,8 @@ void Game::CreateGeometry()
 		materials[7]->AddTextureSRV(3, nonMetal);
 		materials[8]->AddTextureSRV(3, metallicMetal);
 
-		for (int i = 0; i < 8; i++)
+
+		for (int i = 0; i < 9; i++)
 		{
 			materials[i]->AddSampler(0, samplerState);
 		}
@@ -687,6 +689,12 @@ void Game::CreateShadowMap()
 	shadowSampDesc.BorderColor[0] = 1.0f; // Only need the first component
 	Graphics::Device->CreateSamplerState(&shadowSampDesc, &shadowSampler);
 
+	for (int i = 0; i < 9; i++) 
+	{
+		materials[i]->AddTextureSRV(4, shadowSRV);
+		materials[i]->AddSampler(1, shadowSampler);
+	}
+
 }
 
 void Game::DrawToShadowMap(float deltaTime, float totalTime, Light light) 
@@ -716,10 +724,10 @@ void Game::DrawToShadowMap(float deltaTime, float totalTime, Light light)
 
 	// Calculate the light's view and projection matrices
 	DirectX::XMVECTOR lightDir = DirectX::XMLoadFloat3(&(light.Direction));
-	XMMATRIX lightView = XMMatrixLookToLH(-lightDir * 18.0f, lightDir, DirectX::XMVectorSet(0, 1, 0, 0));
+	lightView = XMMatrixLookToLH(-lightDir * 18.0f, lightDir, DirectX::XMVectorSet(0, 1, 0, 0));
 
 	float lightProjectionSize = 15.0f;
-	DirectX::XMMATRIX lightProj = XMMatrixOrthographicLH(lightProjectionSize, lightProjectionSize, 1.0f, 100.0f);
+	lightProj = XMMatrixOrthographicLH(lightProjectionSize, lightProjectionSize, 1.0f, 100.0f);
 
 	ExtraShadowData sData;
 	XMStoreFloat4x4(&(sData.lightView), lightView);
@@ -828,6 +836,10 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - These should happen exactly ONCE PER FRAME
 	// - At the very end of the frame (after drawing *everything*)
 	{
+		// Set SRV resources to null
+		ID3D11ShaderResourceView* nullSRVs[128] = {};
+		Graphics::Context->PSSetShaderResources(0, 128, nullSRVs);
+
 		// Present at the end of the frame
 		bool vsync = Graphics::VsyncState();
 		ImGui::Render(); // Turns this frame’s UI into renderable triangles
@@ -851,6 +863,8 @@ void Game::SetExternalData(float totalTime, DirectX::XMFLOAT3 worldPos, DirectX:
 	vsData.worldInv = e.GetTransform()->GetWorldInverseTransposeMatrix();
 	vsData.view = view;
 	vsData.proj = proj;
+	XMStoreFloat4x4(&(vsData.shadowView), lightView);
+	XMStoreFloat4x4(&(vsData.shadowProj), lightProj);
 
 	ExtraPixelData psData;
 	psData.colourTint = e.GetTint();

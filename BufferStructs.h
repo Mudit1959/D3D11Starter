@@ -8,6 +8,9 @@ struct ExtraVertexData
 	DirectX::XMFLOAT4X4 worldInv;
 	DirectX::XMFLOAT4X4 view;
 	DirectX::XMFLOAT4X4 proj;
+
+	DirectX::XMFLOAT4X4 shadowView;
+	DirectX::XMFLOAT4X4 shadowProj;
 	
 };
 
