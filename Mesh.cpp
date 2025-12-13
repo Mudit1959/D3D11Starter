@@ -1,4 +1,4 @@
-#include "Mesh.h";
+#include "Mesh.h"
 
 
 Mesh::Mesh(Vertex* v, int vCount, unsigned int* i, int iCount)

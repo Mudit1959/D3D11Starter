@@ -52,12 +52,12 @@ void Material::SetOffset(DirectX::XMFLOAT2 o) { offset = o; }
 
 void Material::BindTexturesSamplers() 
 {
-	for (int i = 0; i < textureSRVCount; i++) 
+	for (unsigned int i = 0; i<textureSRVCount; i++) 
 	{
 		Graphics::Context->PSSetShaderResources(i,1,textureSRVs[i].GetAddressOf());
 	}
 
-	for (int i = 0; i < samplerCount; i++) 
+	for (unsigned int i = 0; i<samplerCount; i++) 
 	{
 		Graphics::Context->PSSetSamplers(i, 1, samplers[i].GetAddressOf());
 	}

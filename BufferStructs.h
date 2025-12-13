@@ -1,6 +1,6 @@
 #pragma once
 #include <DirectXMath.h>
-#include "Light.h";
+#include "Light.h"
 
 struct ExtraVertexData 
 {

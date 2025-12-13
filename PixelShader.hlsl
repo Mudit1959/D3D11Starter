@@ -98,7 +98,7 @@ float4 main(VertexToPixel input) : SV_TARGET
             case LIGHT_TYPE_PBR_POINT: //4
                 // Point lights emit in all directions, so we will depend on the range and position of the light
                 toLight = normalize(lights[i].Position - input.worldPos);
-                halfVector = (toLight + toCamera) / 2;
+                halfVector = normalize(toLight + toCamera) / 2;
                 
                 add = DiffuseEnergyConserve(DiffuseLambertPBR(input.normal, toLight, surfaceColor),
                                                 Fresnel(toCamera, halfVector, f0),
@@ -115,7 +115,7 @@ float4 main(VertexToPixel input) : SV_TARGET
             case LIGHT_TYPE_PBR_SPOT: //5
                 // Spot lights emit light in a conical manner, so we will depend on range, position, and angles!
                 toLight = normalize(lights[i].Position - input.worldPos);
-                halfVector = (toLight + toCamera) / 2;
+                halfVector = normalize(toLight + toCamera) / 2;
             
                 add = DiffuseEnergyConserve(DiffuseLambertPBR(input.normal, toLight, surfaceColor),
                                                Fresnel(toCamera, halfVector, f0),
