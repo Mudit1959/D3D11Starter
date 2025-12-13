@@ -32,11 +32,13 @@ private:
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	// void LoadShaders();
 	void LoadVertexShader(std::wstring path);
+	void LoadPPVertexShader(std::wstring path);
 	void LoadPixelShader(std::wstring path);
 	void CreateGeometry();
 	void UpdateImGui(float deltaTime);
 	void RefreshUI();
 	void CreateShadowMap(); // Create the shadow map's required resources
+	void CreateBlurResources();
 	void DrawToShadowMap(float deltaTime, float totalTime, Light light); 
 	
 
@@ -61,12 +63,19 @@ private:
 	//Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> psConstBuffer;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> vertexInputLayout;
+	Microsoft::WRL::ComPtr<ID3D11InputLayout> vertexInputLayout, ppInputLayout;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> shadowTexture;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> shadowDSV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> shadowRasterizer;
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
+
+	// Vertex Shader and Sampler State can be the same for all post processing
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> ppSampler;
+
+	// Pixel Shader, Shader Resource View, and Render Target Views must differ
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> blurRTV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> blurSRV;
 	DirectX::XMFLOAT4X4 lightViewMatrix;
 	DirectX::XMFLOAT4X4 lightProjectionMatrix;
 

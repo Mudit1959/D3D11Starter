@@ -34,9 +34,18 @@ std::vector<std::shared_ptr<Material>> materials;
 
 DirectX::XMMATRIX lightView, lightProj;
 
+// Create some temporary variables to represent colors
+	// - Not necessary, just makes things more readable
+	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	XMFLOAT4 black = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
 int cameraChoice = 0;
 bool displaySkybox = true;
 int shadowMapResolution = 1024;
+int blurRadius = 0;
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -49,6 +58,7 @@ Game::Game()
 	//  - You'll be expanding and/or replacing these later
 	CreateGeometry();
 	CreateShadowMap();
+	CreateBlurResources();
 	Initialize(); //Initialize ImGui
 	camera = std::make_shared<Camera>(10.0f, 0.0f, -30.0f, Window::AspectRatio());
 	secondCamera = std::make_shared<Camera>(0.0f, 0.0f, -10.0f, Window::AspectRatio());
@@ -250,6 +260,18 @@ void Game::RefreshUI()
 		ImGui::Image(shadowSRV.Get(), ImVec2(512, 512) );
 		ImGui::TreePop();
 	}
+
+	if (ImGui::TreeNode("World Render - No Post Process"))
+	{
+		ImGui::Image(blurSRV.Get(), ImVec2(Window::Width()/4.0f, Window::Height()/4.0f));
+		ImGui::TreePop();
+	}
+
+	if (ImGui::TreeNode("Blur"))
+	{
+		ImGui::DragInt("Scale Radius", &blurRadius, 0.2, 0, 10, "%2d", ImGuiSliderFlags_None);
+		ImGui::TreePop();
+	}
 	
 
 	const char* visibility = "Hide ImGui Demo Window";
@@ -330,6 +352,55 @@ void Game::LoadVertexShader(std::wstring path)
 		}
 }
 
+void Game::LoadPPVertexShader(std::wstring path) 
+{
+	vertexShaders.push_back(Microsoft::WRL::ComPtr<ID3D11VertexShader>());
+	ID3DBlob* vertexShaderBlob;
+
+	// Loading shaders
+	//  - Visual Studio will compile our shaders at build time
+	//  - They are saved as .cso (Compiled Shader Object) files
+	//  - We need to load them when the application starts
+		// Read our compiled shader code files into blobs
+		// - Essentially just "open the file and plop its contents here"
+		// - Uses the custom FixPath() helper from Helpers.h to ensure relative paths
+		// - Note the "L" before the string - this tells the compiler the string uses wide characters
+	D3DReadFileToBlob(path.c_str(), &vertexShaderBlob);
+
+	Graphics::Device->CreateVertexShader(
+		vertexShaderBlob->GetBufferPointer(),	// Get a pointer to the blob's contents
+		vertexShaderBlob->GetBufferSize(),		// How big is that data?
+		0,										// No classes in this shader
+		vertexShaders[vertexShaders.size() - 1].GetAddressOf());			// The address of the ID3D11VertexShader pointer
+
+	// Create an input layout - INPUT LAYOUTS ARE ONLY REQUIRED FOR THE VERTEX SHADER!!!!
+	//  - This describes the layout of data sent to a vertex shader
+	//  - In other words, it describes how to interpret data (numbers) in a vertex buffer
+	//  - Doing this NOW because it requires a vertex shader's byte code to verify against!
+	//  - Luckily, we already have that loaded (the vertex shader blob above)
+	{
+		D3D11_INPUT_ELEMENT_DESC inputElements[2] = {};
+
+		// Set up the first element - a position, which is 3 float values
+		inputElements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;				// Most formats are described as color channels; really it just means "Three 32-bit floats"
+		inputElements[0].SemanticName = "POSITION";							// This is "POSITION" - needs to match the semantics in our vertex shader input!
+		inputElements[0].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// How far into the vertex is this?  Assume it's after the previous element
+
+		// Set up the second element - a UV or Texture coordinate, which is 2 more float values
+		inputElements[1].Format = DXGI_FORMAT_R32G32_FLOAT;			// 2x 32-bit floats
+		inputElements[1].SemanticName = "TEXCOORD";							// Match our vertex shader input!
+		inputElements[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// After the previous element
+
+		// Create the input layout, verifying our description against actual shader code
+		Graphics::Device->CreateInputLayout(
+			inputElements,							// An array of descriptions
+			2,										// How many elements in that array?
+			vertexShaderBlob->GetBufferPointer(),	// Pointer to the code of a shader that uses this layout
+			vertexShaderBlob->GetBufferSize(),		// Size of the shader code that uses this layout
+			ppInputLayout.GetAddressOf());			// Address of the resulting ID3D11InputLayout pointer
+	}
+}
+
 void Game::LoadPixelShader(std::wstring path) 
 {
 	pixelShaders.push_back(Microsoft::WRL::ComPtr<ID3D11PixelShader>());
@@ -352,13 +423,7 @@ void Game::LoadPixelShader(std::wstring path)
 // --------------------------------------------------------
 void Game::CreateGeometry()
 {
-	// Create some temporary variables to represent colors
-	// - Not necessary, just makes things more readable
-	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	XMFLOAT4 black = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	
 
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brick, volcanic, crosswalk, rocks, metallic,
 		brickNormal, volcanicNormal, crosswalkNormal, rocksNormal, metallicNormal,
@@ -417,12 +482,14 @@ void Game::CreateGeometry()
 	{
 		LoadVertexShader(FixPath(L"VertexShader.cso"));
 		LoadVertexShader(FixPath(L"ShadowMapVertex.cso"));
+		LoadPPVertexShader(FixPath(L"PostProcessVertex.cso")); // 2
 
 		LoadPixelShader(FixPath(L"PixelShader.cso"));
 		LoadPixelShader(FixPath(L"DebugUVs.cso"));
 		LoadPixelShader(FixPath(L"DebugNormals.cso"));
 		LoadPixelShader(FixPath(L"CustomPS.cso"));
 		LoadPixelShader(FixPath(L"TexturesPS.cso"));
+		LoadPixelShader(FixPath(L"PostProcessPixel.cso")); // 5
 
 		// Use the different shaders to create different materials
 
@@ -756,6 +823,53 @@ void Game::DrawToShadowMap(float deltaTime, float totalTime, Light light)
 
 }
 
+void Game::CreateBlurResources()
+{
+	// Sampler state for post processing
+	D3D11_SAMPLER_DESC ppSampDesc = {};
+	ppSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	ppSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	Graphics::Device->CreateSamplerState(&ppSampDesc, ppSampler.GetAddressOf());
+
+	// Describe the texture we're creating
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = Window::Width(); // size of texture
+	textureDesc.Height = Window::Height(); // size of texture
+	textureDesc.ArraySize = 1;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE; // use both as shader resource view and render target view
+	textureDesc.CPUAccessFlags = 0; 
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Unnormalized is very important! Prevents conversion from 0-255 to 0-1
+	textureDesc.MipLevels = 1; // No mip-maps/subresources
+	textureDesc.MiscFlags = 0;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	// Create the resource (no need to track it after the views are created below)
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> ppTexture;
+	Graphics::Device->CreateTexture2D(&textureDesc, 0, ppTexture.GetAddressOf());
+
+	// Create the Render Target View
+	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+	rtvDesc.Format = textureDesc.Format;
+	rtvDesc.Texture2D.MipSlice = 0;
+	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	Graphics::Device->CreateRenderTargetView(
+		ppTexture.Get(),
+		&rtvDesc,
+		blurRTV.ReleaseAndGetAddressOf());
+	// Create the Shader Resource View
+	// By passing it a null description for the SRV, we
+	// get a "default" SRV that has access to the entire resource
+	Graphics::Device->CreateShaderResourceView(
+		ppTexture.Get(),
+		0,
+		blurSRV.ReleaseAndGetAddressOf());
+
+}
+
 // --------------------------------------------------------
 // Clear the screen, redraw everything, present to the user
 // --------------------------------------------------------
@@ -765,6 +879,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - These things should happen ONCE PER FRAME
 	// - At the beginning of Game::Draw() before drawing *anything*
 	{
+		Graphics::Context->IASetInputLayout(vertexInputLayout.Get());
 
 		// Plot the shadow map each frame, BEFORE drawing entities
 		Game::DrawToShadowMap(deltaTime, totalTime, lights[0]);
@@ -772,6 +887,11 @@ void Game::Draw(float deltaTime, float totalTime)
 		// Clear the back buffer (erase what's on screen) and depth buffer
 		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	&lightsColorIntensity[5*4+3]);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+		// Clear the final post process render target
+		Graphics::Context->ClearRenderTargetView(blurRTV.Get(), &lightsColorIntensity[5*4+3]);
+		// Set rendering to the post process render target
+		Graphics::Context->OMSetRenderTargets(1, blurRTV.GetAddressOf(), Graphics::DepthBufferDSV.Get());
 
 		// Bind the constant buffers
 		Graphics::Context->VSSetConstantBuffers(0, 1, vsConstBuffer.GetAddressOf());
@@ -830,6 +950,38 @@ void Game::Draw(float deltaTime, float totalTime)
 		
 		
 
+	}
+
+	// POST PROCESS
+	{
+		Graphics::Context->IASetInputLayout(ppInputLayout.Get());
+		
+		// Set rendering to back buffer
+		Graphics::Context->OMSetRenderTargets(1, Graphics::BackBufferRTV.GetAddressOf(), 0);
+
+		// Bind shaders and necessary resources, i.e, sampler state and SRV to sample from
+		Graphics::Context->VSSetShader(vertexShaders[2].Get(), 0, 0);
+		Graphics::Context->PSSetShader(pixelShaders[5].Get(), 0, 0);
+		Graphics::Context->PSSetShaderResources(0, 1, blurSRV.GetAddressOf());
+		Graphics::Context->PSSetSamplers(0, 1, ppSampler.GetAddressOf());
+
+		struct ExtraPPData 
+		{
+			int blurRadius;
+			float pixelWidth;
+			float pixelHeight;
+		};
+
+		ExtraPPData eData;
+		eData.blurRadius = blurRadius;
+		eData.pixelHeight = 1.0f / Window::Height();
+		eData.pixelWidth = 1.0f / Window::Width();
+		Graphics::FillAndBindNextConstantBuffer(&eData, sizeof(eData), D3D11_PIXEL_SHADER, 0);
+
+		Graphics::Context->Draw(3, 0);
+
+		Graphics::Context->IASetInputLayout(ppInputLayout.Get());
+		Graphics::Context->OMSetRenderTargets(1, Graphics::BackBufferRTV.GetAddressOf(), 0);
 	}
 
 	// Frame END
