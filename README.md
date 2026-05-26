@@ -15,3 +15,7 @@ We began with a codebase created by our professor, Chris Cascioli, that created 
 7) Implementing a camera system
 
 I studied GPUs, ways GPUs map memory during resource creation; understood the, sometimes ridiculous, ways corporate demands drive GPU development; implemented efficient solutions for GPU memory copies such as a ring buffer.
+
+--------------------
+
+This project can run on Windows only. To run, clone the repository locally, and open the solution file in Visual Studio to run. Packages necessary to run should be added automatically. 
